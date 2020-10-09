@@ -11,10 +11,13 @@
  */
 mobj_t *mobj_new(void)
 {
+   static int _id = 0;
    mobj_t *mo;
 
    if ((mo = calloc(1, sizeof(*mo))) == NULL)
       log_errno_exit(LOG_ERR, "calloc() failed");
+
+   mo->id = _id++;
 
    return mo;
 }
@@ -43,7 +46,8 @@ int mobj_insert_behind(mobj_t *mo, mobj_t *new_mo)
    new_mo->next = mo->next;
    new_mo->prev = mo;
    mo->next = new_mo;
-   new_mo->next->prev = new_mo;
+   if (new_mo->next != NULL)
+      new_mo->next->prev = new_mo;
 
    return 0;
 }

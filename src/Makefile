@@ -1,5 +1,6 @@
 CC=gcc
-CFLAGS=-Wall -g
+CFLAGS=-std=gnu99 -Wall -g
+LDFLAGS=-lm
 
 all: trafsim
 
