@@ -6,6 +6,62 @@
 #include "mobj_out.h"
 
 
+void start_data(FILE *f, fmt_t fm)
+{
+   char *fmt;
+
+   switch (fm)
+   {
+      case FMT_XML_ATTR:
+         fmt = "";
+         break;
+
+      case FMT_CSV:
+         fmt = "";
+         break;
+
+      case FMT_JSON:
+         fmt = "var data_ = [\n";
+         break;
+
+      case FMT_CSS:
+      default:
+         fmt = "";
+
+   }
+
+   fprintf(f, fmt);
+}
+
+
+void end_data(FILE *f, fmt_t fm)
+{
+   char *fmt;
+
+   switch (fm)
+   {
+      case FMT_XML_ATTR:
+         fmt = "";
+         break;
+
+      case FMT_CSV:
+         fmt = "";
+         break;
+
+      case FMT_JSON:
+         fmt = "];\n";
+         break;
+
+      case FMT_CSS:
+      default:
+         fmt = "";
+
+   }
+
+   fprintf(f, fmt);
+}
+
+
 void start_frame(FILE *f, fmt_t fm, int t)
 {
    char *fmt;

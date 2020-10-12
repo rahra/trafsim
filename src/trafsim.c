@@ -65,8 +65,7 @@ void mobj_recalc(mobj_t *mo)
    // if minimum distance is not maintained, decelerate
    if (mo->d_pos > mo->prev->d_pos - d_min)
    {
-      //mobj_decelerate(mo, mo->prev->v_cur - mo->v_diff);
-      mobj_decelerate(mo, 0);
+      mobj_decelerate(mo, mo->prev->v_cur - mo->v_diff);
    }
    // if prev mobj is within visibility
    else if (mo->d_pos > mo->prev->d_pos - d_vis)
@@ -74,7 +73,7 @@ void mobj_recalc(mobj_t *mo)
       // if approach speed difference is higher than valid, decelerate
       if (mo->v_cur - mo->prev->v_cur > mo->v_diff)
          mobj_decelerate(mo, mo->prev->v_cur + mo->v_diff);
-      else
+      else if (mo->v_cur - mo->prev->v_cur < mo->v_diff)
          mobj_accelerate(mo, mo->prev->v_cur + mo->v_diff);
    }
 }
@@ -90,7 +89,7 @@ void mobj_rnd_init(mobj_t *mo)
 {
    mo->v_max = KMH2MS(100) + KMH2MS(50) * frand();
    mo->v_cur = mo->v_max - KMH2MS(50) * frand();
-   mo->v_diff = KMH2MS(0);
+   mo->v_diff = KMH2MS(10);
 
    mo->t_vis = 5;
    mo->t_min = 2;
@@ -122,7 +121,8 @@ int main(int argc, char **argv)
       pos -= KMH2MS(150) * 20 * frand();
    }
 
-   for (t_cur = 0; t_cur < 900; t_cur++)
+   start_data(fout, FMT_JSON);
+   for (t_cur = 0; t_cur < 600; t_cur++)
    {
       start_frame(fout, FMT_JSON, t_cur);
       for (mo = head; mo != NULL; mo = mo->next)
@@ -132,6 +132,7 @@ int main(int argc, char **argv)
       }
       end_frame(fout, FMT_JSON);
    }
+   end_data(fout, FMT_JSON);
 
    return 0;
 }
@@ -141,6 +142,6 @@ static void __attribute__((constructor)) init_frand(void)
 {
    unsigned int s = (uintptr_t) &s;
 
-   srandom(s);
+   //srandom(s);
 }
 
