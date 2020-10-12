@@ -1,5 +1,8 @@
 
 
+const COL = ["#0000FF", "#8A2BE2", "#A52A2A", "#DEB887", "#5F9EA0", "#7FFF00", "#D2691E", "#FF7F50", "#6495ED", "#FFF8DC", "#DC143C", "#00FFFF"];
+
+
 class TrafSim
 {
    constructor(canvas, data)
@@ -59,18 +62,24 @@ class TrafSim
 
    draw()
    {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.clearRect(0, 0, this.canvas.width, 100);
 
       this.ctx.save();
       this.ctx.scale(this.sx, this.sy);
-      this.ctx.fillStyle = "red";
+      this.ctx.lineWidth = 0.5;
 
-      for (var i = 0; i < this.data[this.cur_frame].length; i++)
+      for (var i = 0; i < this.data[this.cur_frame].length - 1; i++)
       {
-
+         this.ctx.fillStyle = COL[i];
          this.ctx.beginPath();
          this.ctx.rect(this.data[this.cur_frame][i].d_pos - this.d_min, 1, 50, 1);
          this.ctx.fill();
+
+         this.ctx.strokeStyle = COL[i];
+         this.ctx.beginPath();
+         this.ctx.moveTo(this.data[this.cur_frame][i].d_pos - this.d_min, 100 - this.data[this.cur_frame][i].v_cur * 1.5);
+         this.ctx.lineTo(this.data[this.cur_frame + 1][i].d_pos - this.d_min, 100 - this.data[this.cur_frame + 1][i].v_cur * 1.5);
+         this.ctx.stroke();
       }
 
       this.ctx.restore();
