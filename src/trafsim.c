@@ -5,16 +5,10 @@
 #include "smlog.h"
 #include "trafsim.h"
 #include "mobj_mem.h"
+#include "mobj_out.h"
 
 
 #define KMH2MS(x) ((x) / 3.6)
-
-
-void mobj_print(FILE *f, const mobj_t *mo)
-{
-   fprintf(f, "id = %d, v_cur = %.1f, v_max = %.1f, t_vis = %.1f, t_min = %.1f, d_pos = %.1f, a_acc = %.1f, a_dec = %.1f, crash = %d\n",
-         mo->id, mo->v_cur, mo->v_max, mo->t_vis, mo->t_min, mo->d_pos, mo->a_acc, mo->a_dec, mo->crash);
-}
 
 
 /*! Accelerate, but not more than v_max.
@@ -71,6 +65,7 @@ void mobj_recalc(mobj_t *mo)
    // if minimum distance is not maintained, decelerate
    if (mo->d_pos > mo->prev->d_pos - d_min)
    {
+      //mobj_decelerate(mo, mo->prev->v_cur - mo->v_diff);
       mobj_decelerate(mo, 0);
    }
    // if prev mobj is within visibility
@@ -95,7 +90,7 @@ void mobj_rnd_init(mobj_t *mo)
 {
    mo->v_max = KMH2MS(100) + KMH2MS(50) * frand();
    mo->v_cur = mo->v_max - KMH2MS(50) * frand();
-   mo->v_diff = KMH2MS(15);
+   mo->v_diff = KMH2MS(0);
 
    mo->t_vis = 5;
    mo->t_min = 2;
@@ -108,6 +103,7 @@ int main(int argc, char **argv)
 {
    mobj_t *head, *mo;
    double pos;
+   FILE *fout = stdout;
    int i, t_cur;
 
    head = mobj_new();
@@ -126,14 +122,15 @@ int main(int argc, char **argv)
       pos -= KMH2MS(150) * 20 * frand();
    }
 
-   for (t_cur = 0; t_cur < 600; t_cur++)
+   for (t_cur = 0; t_cur < 900; t_cur++)
    {
-      printf("[t = %d]\n", t_cur);
+      start_frame(fout, FMT_JSON, t_cur);
       for (mo = head; mo != NULL; mo = mo->next)
       {
-         mobj_print(stdout, mo);
+         mobj_print(fout, FMT_JSON, t_cur, mo);
          mobj_recalc(mo);
       }
+      end_frame(fout, FMT_JSON);
    }
 
    return 0;
