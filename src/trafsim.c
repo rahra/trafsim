@@ -67,14 +67,20 @@ void mobj_recalc(mobj_t *mo)
    {
       mobj_decelerate(mo, mo->prev->v_cur - mo->v_diff);
    }
+#ifdef MTAIN_CONSTSPEED
+   else if (mo->d_pos > mo->prev->d_pos - d_min * 1.5)
+   {
+      mobj_decelerate(mo, mo->prev->v_cur);
+   }
+#endif
    // if prev mobj is within visibility
    else if (mo->d_pos > mo->prev->d_pos - d_vis)
    {
       // if approach speed difference is higher than valid, decelerate
       if (mo->v_cur - mo->prev->v_cur > mo->v_diff)
          mobj_decelerate(mo, mo->prev->v_cur + mo->v_diff);
-      else if (mo->v_cur - mo->prev->v_cur < mo->v_diff)
-         mobj_accelerate(mo, mo->prev->v_cur + mo->v_diff);
+/*      else if (mo->v_cur - mo->prev->v_cur < mo->v_diff)
+         mobj_accelerate(mo, mo->prev->v_cur + mo->v_diff);*/
    }
 }
 
@@ -89,12 +95,12 @@ void mobj_rnd_init(mobj_t *mo)
 {
    mo->v_max = KMH2MS(100) + KMH2MS(50) * frand();
    mo->v_cur = mo->v_max - KMH2MS(50) * frand();
-   mo->v_diff = KMH2MS(10);
+   mo->v_diff = KMH2MS(5);
 
    mo->t_vis = 5;
    mo->t_min = 2;
-   mo->a_acc = 2.5;
-   mo->a_dec = 5;
+   mo->a_acc = mo->v_max / 20;
+   mo->a_dec = mo->v_max / 10;
 }
 
 
