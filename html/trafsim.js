@@ -10,7 +10,7 @@ const USE_MATH_RANDOM = 0;
 //! mobj failure probability
 const MOBJ_FAIL = 0.0;
 //! number of lanes
-const NUM_LANES = 1;
+const NUM_LANES = 2;
 
 
 /*! This class implements a simple (non-cryptographic) PRNG. It used to have
@@ -51,6 +51,7 @@ class DListNode
       // safety check
       if (node == null)
          return;
+      console.log("DListNode.insert()");
       node.next = this.next;
       node.prev = this;
       this.next = node;
@@ -63,6 +64,7 @@ class DListNode
     */
    unlink()
    {
+      console.log("DListNode.unlink()");
       if (this.prev != null)
          this.prev.next = this.next;
       if (this.next != null)
@@ -162,7 +164,10 @@ class MovingObject
 		// if there is no mobj ahead, accelerate if possible
 		if (this.node.prev == null)
       {
-			this.accelerate(this.v_max);
+         // change lane to the right if possible
+         if (!this.change_lane(this.lane.right, d_vis))
+            // otherwise speedup
+			   this.accelerate(this.v_max);
 			return;
 		}
 
@@ -172,14 +177,17 @@ class MovingObject
 		// if prev mobj is too far ahead, accelerate if possible
       if (this.d_pos < prev.d_pos - d_vis)
       {
-			this.accelerate(this.v_max);
+         // change lane to the right if possible
+         if (!this.change_lane(this.lane.right, d_vis))
+            // otherwise speedup
+			   this.accelerate(this.v_max);
 			return;
       }
 
 		// detect crash and immediately start to decelerate
 		if (this.d_pos >= prev.d_pos)
 		{
-			console.log(this.id + " crashes");
+			console.log("mobj " + this.id + " crashes");
 			this.crash = prev.crash = 1;
          this.d_pos = prev.d_pos;
 			this.decelerate(0);
@@ -189,7 +197,10 @@ class MovingObject
 		// if minimum distance is not maintained, decelerate
 		if (this.d_pos > prev.d_pos - d_min)
 		{
-			this.decelerate(prev.v_cur - this.v_diff);
+         // if possible change lane
+         if (!this.change_lane(this.lane.left, d_min))
+            // otherwise decelerate
+			   this.decelerate(prev.v_cur - this.v_diff);
 		}
 /*
 // #ifdef MTAIN_CONSTSPEED
@@ -210,6 +221,46 @@ class MovingObject
 		}
 	}
 
+   change_lane(dst, d_min)
+   {
+      if (dst == null)
+         return 0;
+
+      // get object ahead on the left lane
+      var lobj = dst.ahead_of(this.d_pos);
+
+      // if there is no one
+      if (lobj == null)
+      {
+         // check if this is the last mobj on the current lane and remove it in case
+         if (this.node.next == null)
+            this.lane.unlink_last();
+         else
+            this.lane.unlink(this);
+         // append mobj to the head of the left lane
+         dst.append_first(this);
+      }
+      else
+      {
+         // check if minimum distance of next mobj on dst lane too small
+         if (this.d_pos >= lobj.d_pos - d_min)
+            return 0;
+         // check if minimun distance of mobj behind on dst lane is too small
+         if (lobj.node.next != null && lobj.node.next.data.d_pos + d_min >= this.d_pos)
+            return 0;
+
+         // check if this is the last mobj on the current lane and remove it in case
+         if (this.node.next == null)
+            this.lane.unlink_last();
+         else
+            this.lane.unlink(this);
+         // insert this behind the neighbor on the left
+         lobj.node.insert(this.node);
+         lobj.lane.length++;
+      }
+
+      return 1;
+   }
 
    static kmh2ms(x)
    {
@@ -266,7 +317,7 @@ class Lane
 
    /*! Append a new mobj to the end of the list.
     */
-   append(mobj)
+   append_last(mobj)
    {
       // create node list node
       var node = new DListNode(mobj);
@@ -276,7 +327,7 @@ class Lane
       // increase element counter
       this.length++;
 
-      console.log("appending mobj id = " + mobj.id + ", length = " + this.length);
+      console.log("appending last mobj id = " + mobj.id + ", length = " + this.length);
 
       // handle special case of first element
       if (this.last == null)
@@ -301,10 +352,58 @@ class Lane
 
       this.length--;
 
-      console.log("removing mobj id = " + this.first.data.id + ", length = " + this.length);
+      console.log("removing first mobj id = " + this.first.data.id + ", length = " + this.length);
 
       this.first.unlink();
       this.first = this.first.next;
+   }
+
+
+   /* Unlink (remove) the first mobj from the list.
+    */
+   unlink_last()
+   {
+      // safety check
+      if (this.last == null)
+         return;
+
+      this.length--;
+
+      console.log("removing last mobj id = " + this.first.data.id + ", length = " + this.length);
+
+      this.last.unlink();
+      this.last = this.last.prev;
+   }
+
+
+   append_first(mobj)
+   {
+      // create node list node
+      var node = new DListNode(mobj);
+      // backlink node to object
+      mobj.node = node;
+      mobj.lane = this;
+      // increase element counter
+      this.length++;
+
+      console.log("appending ahead mobj id = " + mobj.id + ", length = " + this.length);
+
+      if (this.first == null)
+      {
+         this.first = this.last = node;
+         return;
+      }
+
+      node.insert(this.first);
+      this.first = node;
+   }
+
+
+   unlink(mobj)
+   {
+      mobj.lane.length--;
+      mobj.node.unlink();
+      console.log("removing intermediate mobj id = " + mobj.id + ", length = " + mobj.lane.length);
    }
 
 
@@ -314,7 +413,7 @@ class Lane
     */
    ahead_of(d_pos)
    {
-      for (var node = this.last; node != null; node = node.next)
+      for (var node = this.last; node != null; node = node.prev)
          if (node.data.d_pos > d_pos)
             return node.data;
 
@@ -340,9 +439,6 @@ class TrafSim
       this.canvas = canvas;
 
       this.lanes = [];
-      for (var i = 0; i < NUM_LANES; i++)
-         this.lanes.push(new Lane());
-
       this.timer = null;
 
       this.t_frame = 1;
@@ -354,6 +450,25 @@ class TrafSim
 
       this.d_max = rlen;
       this.d_min = 0;
+
+      this.init_lanes();
+   }
+
+
+   init_lanes()
+   {
+      for (var i = 0; i < NUM_LANES; i++)
+      {
+         // create new lane
+         this.lanes.push(new Lane());
+
+         // point to neigbor lanes
+         if (i)
+         {
+            this.lanes[i - 1].left = this.lanes[i];
+            this.lanes[i].right = this.lanes[i - 1];
+         }
+      }
    }
 
 
@@ -385,7 +500,7 @@ class TrafSim
 
          // check if there are enough cars on the lane, otherwise append new ones
          if (this.lanes[i].length < MAX_CARS_PER_LANE && (this.lanes[i].last == null || this.lanes[i].last.data.d_pos > MIN_ENTRY_POS))
-            this.lanes[i].append(new RandomCar());
+            this.lanes[i].append_last(new RandomCar());
 
          this.lanes[i].recalc();
       }
@@ -414,7 +529,7 @@ class TrafSim
             mobj = node.data;
             this.ctx.fillStyle = X11Colors[mobj.id*179%X11Colors.length].val;
             this.ctx.beginPath();
-            this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20+j*5, p, p);
+            this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20 + (this.lanes.length - j - 1) * 5, p, p);
             this.ctx.fill();
 
             this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
