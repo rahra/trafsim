@@ -165,7 +165,7 @@ class MovingObject
 		if (this.node.prev == null)
       {
          // change lane to the right if possible
-         if (!this.change_lane(this.lane.right, d_vis))
+         //if (!this.change_lane(this.lane.right, d_vis))
             // otherwise speedup
 			   this.accelerate(this.v_max);
 			return;
@@ -178,7 +178,7 @@ class MovingObject
       if (this.d_pos < prev.d_pos - d_vis)
       {
          // change lane to the right if possible
-         if (!this.change_lane(this.lane.right, d_vis))
+         //if (!this.change_lane(this.lane.right, d_vis))
             // otherwise speedup
 			   this.accelerate(this.v_max);
 			return;
@@ -221,6 +221,17 @@ class MovingObject
 		}
 	}
 
+
+   unlink()
+   {
+      // check if this is the last mobj on the current lane and remove it in case
+      if (this.node.next == null)
+         this.lane.unlink_last();
+      else
+         this.lane.unlink(this);
+   }
+
+
    change_lane(dst, d_min)
    {
       if (dst == null)
@@ -233,10 +244,8 @@ class MovingObject
       if (lobj == null)
       {
          // check if this is the last mobj on the current lane and remove it in case
-         if (this.node.next == null)
-            this.lane.unlink_last();
-         else
-            this.lane.unlink(this);
+         this.unlink();
+
          // append mobj to the head of the left lane
          dst.append_first(this);
       }
@@ -250,13 +259,14 @@ class MovingObject
             return 0;
 
          // check if this is the last mobj on the current lane and remove it in case
-         if (this.node.next == null)
-            this.lane.unlink_last();
-         else
-            this.lane.unlink(this);
+         this.unlink();
+
          // insert this behind the neighbor on the left
-         lobj.node.insert(this.node);
-         lobj.lane.length++;
+         // check if neigbor is last in lane
+         if (lobj.node.next == null)
+            dst.append_last(this);
+         else
+            dst.insert(lobj, this.node);
       }
 
       return 1;
@@ -327,7 +337,7 @@ class Lane
       // increase element counter
       this.length++;
 
-      console.log("appending last mobj id = " + mobj.id + ", length = " + this.length);
+      console.log("lane " + this.id + " appending last mobj id = " + mobj.id + ", length = " + this.length);
 
       // handle special case of first element
       if (this.last == null)
@@ -337,7 +347,8 @@ class Lane
       }
 
       // otherwise insert behind
-      this.last.insert(node);
+      node.prev = this.last;
+      this.last.next = node;
       this.last = node;
    }
 
@@ -352,7 +363,7 @@ class Lane
 
       this.length--;
 
-      console.log("removing first mobj id = " + this.first.data.id + ", length = " + this.length);
+      console.log("lane " + this.id + " removing first mobj id = " + this.first.data.id + ", length = " + this.length);
 
       this.first.unlink();
       this.first = this.first.next;
@@ -369,7 +380,7 @@ class Lane
 
       this.length--;
 
-      console.log("removing last mobj id = " + this.first.data.id + ", length = " + this.length);
+      console.log("lane " + this.id + " removing last mobj id = " + this.first.data.id + ", length = " + this.length);
 
       this.last.unlink();
       this.last = this.last.prev;
@@ -386,7 +397,7 @@ class Lane
       // increase element counter
       this.length++;
 
-      console.log("appending ahead mobj id = " + mobj.id + ", length = " + this.length);
+      console.log("lane " + this.id + " appending ahead mobj id = " + mobj.id + ", length = " + this.length);
 
       if (this.first == null)
       {
@@ -394,7 +405,8 @@ class Lane
          return;
       }
 
-      node.insert(this.first);
+      node.next = this.first;
+      this.first.prev = node;
       this.first = node;
    }
 
@@ -403,7 +415,18 @@ class Lane
    {
       mobj.lane.length--;
       mobj.node.unlink();
-      console.log("removing intermediate mobj id = " + mobj.id + ", length = " + mobj.lane.length);
+      console.log("lane " + this.id + " removing intermediate mobj id = " + mobj.id + ", length = " + mobj.lane.length);
+   }
+
+
+   insert(lobj, node)
+   {
+      //safety check
+      //if (lobj.lane != this) console.log("ill lane!");
+      node.data.lane = this;
+      lobj.node.insert(node);
+      lobj.lane.length++;
+      console.log("lane " + this.id + " inserting intermediate mobj id = " + node.data.id + ", length = " + this.length);
    }
 
 
@@ -423,11 +446,29 @@ class Lane
 
    recalc()
    {
+      this.integrity();
       // loop over all elements in the list
       for (var node = this.first; node != null; node = node.next)
       {
          node.data.recalc();
       }
+   }
+
+
+   integrity()
+   {
+      if (this.first == null && this.last != null)
+         console.log("ERR1");
+      if (this.fist != null && this.last == null)
+         console.log("ERR2");
+      if (this.first != null && this.first.prev != null)
+         console.log("ERR3");
+      if (this.last != null && this.last.next != null)
+         console.log("ERR4");
+      var i, node;
+      for (i = 0, node = this.first; node != null; node = node.next, i++);
+      if (this.length != i)
+         console.log(i + " != " + this.length);
    }
 }
 
