@@ -288,7 +288,8 @@ class TrafSim
       this.canvas.height = window.innerHeight;
 
       this.sx = this.canvas.width / (this.d_max - this.d_min);
-      this.sy = this.canvas.height / 100;
+      //this.sy = this.canvas.height / 100;
+      this.sy = this.sx;
    }
 
 
@@ -318,9 +319,10 @@ class TrafSim
    {
       this.ctx.clearRect(0, 0, this.canvas.width, 100);
 
-      this.ctx.save();
-      this.ctx.scale(this.sx, this.sy);
-      this.ctx.lineWidth = 0.5;
+      //this.ctx.save();
+      this.ctx.lineWidth = 1;
+
+      var p = 3;
 
       var i, node, mobj;
       for (i = 0, node = this.lane.first; node != null; i++, node = node.next)
@@ -328,17 +330,17 @@ class TrafSim
          mobj = node.data;
          this.ctx.fillStyle = COL[i];
          this.ctx.beginPath();
-         this.ctx.rect(mobj.d_pos - this.d_min, 1, 50, 1);
+         this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20, p, p);
          this.ctx.fill();
 
          this.ctx.strokeStyle = COL[i];
          this.ctx.beginPath();
-         this.ctx.moveTo(mobj.d_old - this.d_min, 100 - mobj.v_old * 1.5);
-         this.ctx.lineTo(mobj.d_pos - this.d_min, 100 - mobj.v_cur * 1.5);
+         this.ctx.moveTo((mobj.d_old - this.d_min) * this.sx, 300 - mobj.v_old * 3);
+         this.ctx.lineTo((mobj.d_pos - this.d_min) * this.sx, 300 - mobj.v_cur * 3);
          this.ctx.stroke();
       }
 
-      this.ctx.restore();
+      //this.ctx.restore();
    }
 }
 
