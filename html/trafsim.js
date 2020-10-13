@@ -9,6 +9,22 @@ const MAX_FRAMES = 600;
 const COL = ["#0000FF", "#8A2BE2", "#A52A2A", "#DEB887", "#5F9EA0", "#7FFF00", "#D2691E", "#FF7F50", "#6495ED", "#FFF8DC", "#DC143C", "#00FFFF"];
 
 
+/*! This class implements a simple (non-cryptographic) PRNG. It used to have
+ * the ability to always start at the same seed which may be interesting to be
+ * able to compare simulation data.
+ */
+class SRandom
+{
+   static seed = 1;
+
+   static rand()
+   {
+      var x = Math.sin(SRandom.seed++) * 10000;
+      return x - Math.floor(x);
+   }
+}
+
+
 class DListNode
 {
    constructor(data)
@@ -198,8 +214,8 @@ class RandomCar extends MovingObject
    constructor(node = null)
    {
       super(node);
-      this.v_max = MovingObject.kmh2ms(100) + MovingObject.kmh2ms(50) * Math.random();
-      this.v_cur = this.v_max - MovingObject.kmh2ms(50) * Math.random();
+      this.v_max = MovingObject.kmh2ms(100) + MovingObject.kmh2ms(50) * SRandom.rand();
+      this.v_cur = this.v_max - MovingObject.kmh2ms(50) * SRandom.rand();
       this.v_diff = MovingObject.kmh2ms(5);
 
       this.t_vis = 5.0;
