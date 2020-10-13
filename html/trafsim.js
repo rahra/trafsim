@@ -1,12 +1,10 @@
 
 //! maximum number of cars per lane
-const MAX_CARS_PER_LANE = 10;
+const MAX_CARS_PER_LANE = 30;
 //! new mobjs do not enter befor MIN_ENTRY_POS meters
 const MIN_ENTRY_POS = 500;
-//! maximum frames to calculate
-const MAX_FRAMES = 600;
-
-const COL = ["#0000FF", "#8A2BE2", "#A52A2A", "#DEB887", "#5F9EA0", "#7FFF00", "#D2691E", "#FF7F50", "#6495ED", "#FFF8DC", "#DC143C", "#00FFFF"];
+//! maximum frames to calculate (0 for unlimited)
+const MAX_FRAMES = 0;
 
 
 /*! This class implements a simple (non-cryptographic) PRNG. It used to have
@@ -73,7 +71,7 @@ class MovingObject
       //! pointer to list node
       this.node = node;
       //! id
-      this.id = this.id_cnt++;
+      this.id = MovingObject.id_cnt++;
       //! current speed
       this.v_cur = 0.0;
       //! speed maintained in previous simulation frame
@@ -241,6 +239,8 @@ class Lane
    }
 
 
+   /*! Append a new mobj to the end of the list.
+    */
    append(mobj)
    {
       // create node list node
@@ -249,6 +249,8 @@ class Lane
       mobj.node = node;
       // increase element counter
       this.length++;
+
+      console.log("appending mobj id = " + mobj.id + ", length = " + this.length);
 
       // handle special case of first element
       if (this.last == null)
@@ -260,6 +262,25 @@ class Lane
       // otherwise insert behind
       this.last.insert(node);
       this.last = node;
+   }
+
+
+   /* Unlink (remove) the first mobj from the list.
+    */
+   unlink_first()
+   {
+      // safety check
+      if (this.first == null)
+         return;
+
+      this.length--;
+
+      console.log("removing mobj id = " + this.first.data.id + ", length = " + this.length);
+
+      if (this.first.next != null)
+         this.first.next.prev = null
+
+      this.first = this.first.next;
    }
 
 
@@ -316,15 +337,17 @@ class TrafSim
       // increase frame counter
       this.cur_frame++;
 
-      // check if there are enough cars on the lane
+      // remove mobjs which are out of scope of the lane
+      while (this.lane.first != null && this.lane.first.data.d_pos > this.d_max)
+         this.lane.unlink_first();
+
+      // check if there are enough cars on the lane, otherwise append new ones
       if (this.lane.length < MAX_CARS_PER_LANE && (this.lane.last == null || this.lane.last.data.d_pos > MIN_ENTRY_POS))
-      {
          this.lane.append(new RandomCar());
-      }
 
       this.lane.recalc();
 
-      if (this.cur_frame >= MAX_FRAMES)
+      if (MAX_FRAMES && this.cur_frame >= MAX_FRAMES)
          window.clearInterval(this.timer);
    }
 
@@ -344,12 +367,12 @@ class TrafSim
       for (i = 0, node = this.lane.first; node != null; i++, node = node.next)
       {
          mobj = node.data;
-         this.ctx.fillStyle = COL[i];
+         this.ctx.fillStyle = X11Colors[i*179%X11Colors.length].val;
          this.ctx.beginPath();
          this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20, p, p);
          this.ctx.fill();
 
-         this.ctx.strokeStyle = COL[i];
+         this.ctx.strokeStyle = X11Colors[i*179%X11Colors.length].val;
          this.ctx.beginPath();
          this.ctx.moveTo((mobj.d_old - this.d_min) * this.sx, 300 - mobj.v_old * 3);
          this.ctx.lineTo((mobj.d_pos - this.d_min) * this.sx, 300 - mobj.v_cur * 3);
