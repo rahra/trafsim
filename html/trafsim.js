@@ -165,7 +165,7 @@ class MovingObject
 		if (this.node.prev == null)
       {
          // change lane to the right if possible
-         //if (!this.change_lane(this.lane.right, d_vis))
+         if (!this.change_lane(this.lane.right, d_vis))
             // otherwise speedup
 			   this.accelerate(this.v_max);
 			return;
@@ -178,7 +178,7 @@ class MovingObject
       if (this.d_pos < prev.d_pos - d_vis)
       {
          // change lane to the right if possible
-         //if (!this.change_lane(this.lane.right, d_vis))
+         if (!this.change_lane(this.lane.right, d_vis))
             // otherwise speedup
 			   this.accelerate(this.v_max);
 			return;
@@ -227,6 +227,8 @@ class MovingObject
       // check if this is the last mobj on the current lane and remove it in case
       if (this.node.next == null)
          this.lane.unlink_last();
+      else if (this.node.prev == null)
+         this.lane.unlink_first();
       else
          this.lane.unlink(this);
    }
@@ -365,12 +367,20 @@ class Lane
 
       console.log("lane " + this.id + " removing first mobj id = " + this.first.data.id + ", length = " + this.length);
 
-      this.first.unlink();
-      this.first = this.first.next;
+      // check if it is the last on the lane (no one behind)
+      if (this.first.next == null)
+      {
+         this.first = this.last = null;
+      }
+      else
+      {
+         this.first = this.first.next;
+         this.first.prev = null;
+      }
    }
 
 
-   /* Unlink (remove) the first mobj from the list.
+   /* Unlink (remove) the last mobj from the list.
     */
    unlink_last()
    {
@@ -382,8 +392,16 @@ class Lane
 
       console.log("lane " + this.id + " removing last mobj id = " + this.first.data.id + ", length = " + this.length);
 
-      this.last.unlink();
-      this.last = this.last.prev;
+      // check if it is the last one on the lane (no one ahead)
+      if (this.last.prev == null)
+      {
+         this.last = this.first = null;
+      }
+      else
+      {
+         this.last = this.last.prev;
+         this.last.next = null;
+      }
    }
 
 
@@ -422,7 +440,7 @@ class Lane
    insert(lobj, node)
    {
       //safety check
-      //if (lobj.lane != this) console.log("ill lane!");
+      if (lobj.lane != this) console.log("ill lane!");
       node.data.lane = this;
       lobj.node.insert(node);
       lobj.lane.length++;
@@ -459,7 +477,7 @@ class Lane
    {
       if (this.first == null && this.last != null)
          console.log("ERR1");
-      if (this.fist != null && this.last == null)
+      if (this.first != null && this.last == null)
          console.log("ERR2");
       if (this.first != null && this.first.prev != null)
          console.log("ERR3");
@@ -589,6 +607,8 @@ class TrafSim
 var canvas = document.getElementById('raceplane');
 canvas.width = document.body.clientWidth;
 canvas.height = window.innerHeight;
+
+console.log("===== NEW RUN =====");
 
 var ts = new TrafSim(canvas);
 
