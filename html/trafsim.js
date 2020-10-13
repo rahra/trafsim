@@ -9,6 +9,8 @@ const MAX_FRAMES = 0;
 const USE_MATH_RANDOM = 0;
 //! mobj failure probability
 const MOBJ_FAIL = 0.0;
+//! number of lanes
+const NUM_LANES = 1;
 
 
 /*! This class implements a simple (non-cryptographic) PRNG. It used to have
@@ -101,6 +103,8 @@ class MovingObject
       this.a_dec = 0.0;
       //! 1 if crash
       this.crash = 0;
+      //! pointer to lane
+      this.lane = null;
    }
 
 
@@ -241,14 +245,22 @@ class RandomCar extends MovingObject
 
 class Lane
 {
+   static id_cnt = 0;
+
+
    constructor()
    {
+      //! lane id
+      this.id = Lane.id_cnt++;
       //! pointer to first mobj
       this.first = null;
       //! pointer to last mobj
       this.last = this.first;
       //! number of mobjs on the lane
       this.length = 0;
+      //! neighbor lanes
+      this.left = null;
+      this.right = null;
    }
 
 
@@ -260,6 +272,7 @@ class Lane
       var node = new DListNode(mobj);
       // backlink node to object
       mobj.node = node;
+      mobj.lane = this;
       // increase element counter
       this.length++;
 
@@ -295,6 +308,20 @@ class Lane
    }
 
 
+   /*! Return mobj which is directly ahead of position d_pos.
+    * @param d_pos Position from which to look ahead.
+    * @return Returns the mobj object ahead, or null if there is no mobj ahead.
+    */
+   ahead_of(d_pos)
+   {
+      for (var node = this.last; node != null; node = node.next)
+         if (node.data.d_pos > d_pos)
+            return node.data;
+
+      return null;
+   }
+
+
    recalc()
    {
       // loop over all elements in the list
@@ -312,7 +339,9 @@ class TrafSim
    {
       this.canvas = canvas;
 
-      this.lane = new Lane();
+      this.lanes = [];
+      for (var i = 0; i < NUM_LANES; i++)
+         this.lanes.push(new Lane());
 
       this.timer = null;
 
@@ -348,15 +377,18 @@ class TrafSim
       // increase frame counter
       this.cur_frame++;
 
-      // remove mobjs which are out of scope of the lane
-      while (this.lane.first != null && this.lane.first.data.d_pos > this.d_max)
-         this.lane.unlink_first();
+      for (var i = 0; i < this.lanes.length; i++)
+      {
+         // remove mobjs which are out of scope of the lane
+         while (this.lanes[i].first != null && this.lanes[i].first.data.d_pos > this.d_max)
+            this.lanes[i].unlink_first();
 
-      // check if there are enough cars on the lane, otherwise append new ones
-      if (this.lane.length < MAX_CARS_PER_LANE && (this.lane.last == null || this.lane.last.data.d_pos > MIN_ENTRY_POS))
-         this.lane.append(new RandomCar());
+         // check if there are enough cars on the lane, otherwise append new ones
+         if (this.lanes[i].length < MAX_CARS_PER_LANE && (this.lanes[i].last == null || this.lanes[i].last.data.d_pos > MIN_ENTRY_POS))
+            this.lanes[i].append(new RandomCar());
 
-      this.lane.recalc();
+         this.lanes[i].recalc();
+      }
 
       if (MAX_FRAMES && this.cur_frame >= MAX_FRAMES)
          window.clearInterval(this.timer);
@@ -374,20 +406,23 @@ class TrafSim
 
       var p = 3;
 
-      var i, node, mobj;
-      for (i = 0, node = this.lane.first; node != null; i++, node = node.next)
+      for (var j = 0; j < this.lanes.length; j++)
       {
-         mobj = node.data;
-         this.ctx.fillStyle = X11Colors[mobj.id*179%X11Colors.length].val;
-         this.ctx.beginPath();
-         this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20, p, p);
-         this.ctx.fill();
+         var i, node, mobj;
+         for (i = 0, node = this.lanes[j].first; node != null; i++, node = node.next)
+         {
+            mobj = node.data;
+            this.ctx.fillStyle = X11Colors[mobj.id*179%X11Colors.length].val;
+            this.ctx.beginPath();
+            this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20+j*5, p, p);
+            this.ctx.fill();
 
-         this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
-         this.ctx.beginPath();
-         this.ctx.moveTo((mobj.d_old - this.d_min) * this.sx, 300 - mobj.v_old * 3);
-         this.ctx.lineTo((mobj.d_pos - this.d_min) * this.sx, 300 - mobj.v_cur * 3);
-         this.ctx.stroke();
+            this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
+            this.ctx.beginPath();
+            this.ctx.moveTo((mobj.d_old - this.d_min) * this.sx, 300 - mobj.v_old * 3);
+            this.ctx.lineTo((mobj.d_pos - this.d_min) * this.sx, 300 - mobj.v_cur * 3);
+            this.ctx.stroke();
+         }
       }
 
       //this.ctx.restore();
