@@ -5,6 +5,8 @@ const MAX_CARS_PER_LANE = 30;
 const MIN_ENTRY_POS = 500;
 //! maximum frames to calculate (0 for unlimited)
 const MAX_FRAMES = 0;
+//! use Math.random() as PRNG
+const USE_MATH_RANDOM = 0;
 
 
 /*! This class implements a simple (non-cryptographic) PRNG. It used to have
@@ -17,6 +19,9 @@ class SRandom
 
    static rand()
    {
+      if (USE_MATH_RANDOM)
+         return Math.random();
+
       var x = Math.sin(SRandom.seed++) * 10000;
       return x - Math.floor(x);
    }
@@ -277,9 +282,7 @@ class Lane
 
       console.log("removing mobj id = " + this.first.data.id + ", length = " + this.length);
 
-      if (this.first.next != null)
-         this.first.next.prev = null
-
+      this.first.unlink();
       this.first = this.first.next;
    }
 
