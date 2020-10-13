@@ -591,6 +591,14 @@ class TrafSim
             this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20 + (this.lanes.length - j - 1) * 5, p, p);
             this.ctx.fill();
 
+            if (mobj.crash)
+            {
+               this.ctx.strokeStyle = "red";
+               this.ctx.beginPath();
+               this.ctx.rect((mobj.d_pos - this.d_min) * this.sx - 1, 20 + (this.lanes.length - j - 1) * 5 - 1, p+2, p+2);
+               this.ctx.stroke();
+            }
+
             this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
             this.ctx.beginPath();
             this.ctx.moveTo((mobj.d_old - this.d_min) * this.sx, 300 - mobj.v_old * 3);
