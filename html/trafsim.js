@@ -107,6 +107,8 @@ class MovingObject
       this.crash = 0;
       //! pointer to lane
       this.lane = null;
+      //! frame of current state
+      this.t_cur = 0;
    }
 
 
@@ -136,9 +138,14 @@ class MovingObject
    }
 
 
-	recalc()
+	recalc(t_cur)
 	{
+      // check if current frame already calculated
+      if (this.t_cur >= t_cur)
+         return;
+
       this.save();
+      this.t_cur = t_cur;
 
       if (SRandom.rand() < MOBJ_FAIL)
       {
@@ -462,13 +469,13 @@ class Lane
    }
 
 
-   recalc()
+   recalc(t_cur)
    {
       this.integrity();
       // loop over all elements in the list
       for (var node = this.first; node != null; node = node.next)
       {
-         node.data.recalc();
+         node.data.recalc(t_cur);
       }
    }
 
@@ -561,7 +568,7 @@ class TrafSim
          if (this.lanes[i].length < MAX_CARS_PER_LANE && (this.lanes[i].last == null || this.lanes[i].last.data.d_pos > MIN_ENTRY_POS))
             this.lanes[i].append_last(new RandomCar());
 
-         this.lanes[i].recalc();
+         this.lanes[i].recalc(this.cur_frame);
       }
 
       if (MAX_FRAMES && this.cur_frame >= MAX_FRAMES)
