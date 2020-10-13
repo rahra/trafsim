@@ -86,7 +86,7 @@ class MovingObject
       //! current speed
       this.v_cur = 0.0;
       //! speed maintained in previous simulation frame
-      this.v_old = 0.0;
+      //this.v_old = 0.0;
       //! maximum speed
       this.v_max = 0.0;
       //! max speed difference on approaching a mobj ahead
@@ -98,7 +98,7 @@ class MovingObject
       //! current position
       this.d_pos = 0.0;
       //! position of previous simulation frame
-      this.d_old = 0.0;
+      //this.d_old = 0.0;
       //! acceleration
       this.a_acc = 0.0;
       //! deceleration
@@ -109,6 +109,9 @@ class MovingObject
       this.lane = null;
       //! frame of current state
       this.t_cur = 0;
+
+      //! backup data
+      this.old = {v_cur: this.v_cur, d_pos: this.d_pos, prev: null, next: null};
    }
 
 
@@ -133,8 +136,10 @@ class MovingObject
     */
    save()
    {
-      this.v_old = this.v_cur;
-      this.d_old = this.d_pos;
+      this.old.v_cur = this.v_cur;
+      this.old.d_pos = this.d_pos;
+      this.old.prev = this.node.prev != null ? this.node.prev.data : null;
+      this.old.next = this.node.next != null ? this.node.next.data : null;
    }
 
 
@@ -307,8 +312,6 @@ class RandomCar extends MovingObject
       this.t_min = 2.0;
       this.a_acc = this.v_max / 20.0;
       this.a_dec = this.v_max / 10.0;
-
-      this.save();
    }
 }
 
@@ -608,7 +611,7 @@ class TrafSim
 
             this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
             this.ctx.beginPath();
-            this.ctx.moveTo((mobj.d_old - this.d_min) * this.sx, 300 - mobj.v_old * 3);
+            this.ctx.moveTo((mobj.old.d_pos - this.d_min) * this.sx, 300 - mobj.old.v_cur * 3);
             this.ctx.lineTo((mobj.d_pos - this.d_min) * this.sx, 300 - mobj.v_cur * 3);
             this.ctx.stroke();
          }
