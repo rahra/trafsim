@@ -367,12 +367,12 @@ class TrafSim
       for (i = 0, node = this.lane.first; node != null; i++, node = node.next)
       {
          mobj = node.data;
-         this.ctx.fillStyle = X11Colors[i*179%X11Colors.length].val;
+         this.ctx.fillStyle = X11Colors[mobj.id*179%X11Colors.length].val;
          this.ctx.beginPath();
          this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20, p, p);
          this.ctx.fill();
 
-         this.ctx.strokeStyle = X11Colors[i*179%X11Colors.length].val;
+         this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
          this.ctx.beginPath();
          this.ctx.moveTo((mobj.d_old - this.d_min) * this.sx, 300 - mobj.v_old * 3);
          this.ctx.lineTo((mobj.d_pos - this.d_min) * this.sx, 300 - mobj.v_cur * 3);
