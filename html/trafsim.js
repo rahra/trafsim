@@ -7,6 +7,8 @@ const MIN_ENTRY_POS = 500;
 const MAX_FRAMES = 0;
 //! use Math.random() as PRNG
 const USE_MATH_RANDOM = 0;
+//! mobj failure probability
+const MOBJ_FAIL = 0.0;
 
 
 /*! This class implements a simple (non-cryptographic) PRNG. It used to have
@@ -132,6 +134,12 @@ class MovingObject
 	{
       this.save();
 
+      if (SRandom.rand() < MOBJ_FAIL)
+      {
+         console.log(this.id + " fails");
+         this.crash = 1;
+      }
+
 		// crashed mobjs don't do anything accept stopping immediately
 		if (this.crash)
 		{
@@ -167,7 +175,7 @@ class MovingObject
 		// detect crash and immediately start to decelerate
 		if (this.d_pos >= prev.d_pos)
 		{
-			console.log("crash detected");
+			console.log(this.id + " crashes");
 			this.crash = prev.crash = 1;
          this.d_pos = prev.d_pos;
 			this.decelerate(0);
