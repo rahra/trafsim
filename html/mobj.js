@@ -142,9 +142,24 @@ class MovingObject
       if (prev == null || this.d_pos < prev.d_pos - this.d_vis)
       {
          // change lane to the right if possible
-         if (!this.change_back())
-            // otherwise speedup
-			   this.accelerate(this.v_max);
+         if (this.change_back())
+            return;
+
+         // avoid passing right if enabled: check if there is lane on the left
+         if (!PASS_RIGHT && this.lane.left != null)
+         {
+            // get object ahead on the left lane
+            var node = this.lane.left.ahead_of(this.d_pos);
+            // check if object is within minimum distance
+            if (node.data != null && node.data.d_pos < this.d_pos + this.d_min)
+            {
+               // and decelerate in case
+               this.decelerate(node.data.v_cur);
+               return;
+            }
+         }
+         // otherwise speedup
+         this.accelerate(this.v_max);
 			return;
       }
 

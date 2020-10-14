@@ -11,6 +11,8 @@ const USE_MATH_RANDOM = 0;
 const MOBJ_FAIL = 0.0;
 //! number of lanes
 const NUM_LANES = 2;
+//! allow to pass on the right lanes
+const PASS_RIGHT = 0;
 //! distribution of mobj types
 const MOBJ_TYPES = [
    {type: "car", p: 0.4},
@@ -142,7 +144,7 @@ class Lane
    }
 
 
-   /*! Return mobj which is directly ahead of position d_pos.
+   /*! Return DLinkNode which is directly ahead of position d_pos.
     * @param d_pos Position from which to look ahead.
     * @return Returns the DListNode of the object ahead.
     */
