@@ -31,9 +31,9 @@ class MovingObject
       //! frame of current state
       this.t_cur = 0;
       //! probabilty one would pass left
-      this.p_pass = 1.0;
+      this._p_pass = 1.0;
       //! probabilty one would change back to the right lanes
-      this.p_right = 1.0;
+      this._p_right = 1.0;
       //! display color
       this.color = "grey";
       //! initial time frame (should be set on creation)
@@ -41,6 +41,18 @@ class MovingObject
 
       //! backup data
       this.old = {v_cur: this.v_cur, d_pos: this.d_pos, prev: null, next: null};
+   }
+
+
+   get p_pass()
+   {
+      return this._p_pass;
+   }
+
+
+   get p_right()
+   {
+      return this._p_right;
    }
 
 
@@ -299,9 +311,22 @@ class BlockingCar extends MovingObject
       this.a_acc = this.v_max / 20.0;
       this.a_dec = this.v_max / 10.0;
 
-      this.p_right = 0.5;
+      //this.p_right = 0.05;
 
       this.color = "red";
+   }
+
+
+   /*! Calculate probability to move back to the right for the blocking car.
+    */
+   get p_right()
+   {
+      // if there is no mobj behind or too far away don't change lane back
+      if (this.node.next.data == null || this.node.next.data.d_pos < this.d_pos - this.d_vis)
+         return 0;
+
+      // otherwise change back with minimalistic probability
+      return 0.05;
    }
 }
 

@@ -11,6 +11,13 @@ const USE_MATH_RANDOM = 0;
 const MOBJ_FAIL = 0.0;
 //! number of lanes
 const NUM_LANES = 2;
+//! distribution of mobj types
+const MOBJ_TYPES = [
+   {type: "car", p: 0.4},
+   {type: "truck", p: 0.3},
+   {type: "bike", p: 0.01},
+   {type: "blocking", p: 0.29},
+];
 
 
 function is_null(a)
@@ -199,6 +206,9 @@ class TrafSim
 
       this.mobj_cnt = 0;
 
+      this.avg_speed = 0;
+      this.avg_cnt = 0;
+
       this.init_lanes();
    }
 
@@ -233,9 +243,23 @@ class TrafSim
    }
 
 
+   random_mobj_type()
+   {
+      var rnd = SRandom.rand();
+      for (var i = 0; i < MOBJ_TYPES.length; i++)
+      {
+         if (rnd < MOBJ_TYPES[i].p)
+            return MOBJ_TYPES[i].type;
+         rnd -= MOBJ_TYPES[i].p;
+      }
+      console.log("*** no mobj randomly selected, probably definition error in MOBJ_TYPES");
+      return "car";
+   }
+
+
    gen_mobj()
    {
-      return new DListNode(MObjFactory.make());
+      return new DListNode(MObjFactory.make(this.random_mobj_type()));
    }
 
 
@@ -252,7 +276,10 @@ class TrafSim
          for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; node = node.next, this.mobj_cnt--)
          {
             node.unlink();
-            console.log("removed " + node.data + ", type = " + node.data.constructor.name + ", time = " + (this.cur_frame - node.data.t_init) + ", avg_speed = " + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init)));
+            //console.log("removed " + node.data + ", type = " + node.data.constructor.name + ", time = " + (this.cur_frame - node.data.t_init) + ", avg_speed = " + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init)));
+            this.avg_speed = (this.avg_speed * this.avg_cnt + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (this.avg_cnt + 1);
+            this.avg_cnt++;
+            console.log("average speed = " + this.avg_speed);
          }
 
 
