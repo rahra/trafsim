@@ -10,8 +10,6 @@ class MovingObject
       this.id = MovingObject.id_cnt++;
       //! current speed
       this.v_cur = 0.0;
-      //! speed maintained in previous simulation frame
-      //this.v_old = 0.0;
       //! maximum speed
       this.v_max = 0.0;
       //! max speed difference on approaching a mobj ahead
@@ -22,8 +20,6 @@ class MovingObject
       this.t_min = 0.0;
       //! current position
       this.d_pos = 0.0;
-      //! position of previous simulation frame
-      //this.d_old = 0.0;
       //! acceleration
       this.a_acc = 0.0;
       //! deceleration
@@ -37,6 +33,28 @@ class MovingObject
 
       //! backup data
       this.old = {v_cur: this.v_cur, d_pos: this.d_pos, prev: null, next: null};
+   }
+
+
+   toString()
+   {
+      return "mobj id = " + this.id;
+   }
+
+
+   /*! Calculate visibility range in meters.
+    */
+   get d_vis()
+   {
+		return this.v_cur * this.t_vis;
+   }
+
+
+   /*! Calculate minimum distance in meters.
+    */
+   get d_min()
+   {
+		return this.v_cur * this.t_min;
    }
 
 
@@ -94,15 +112,11 @@ class MovingObject
 		// and move ahead
 		this.d_pos += this.v_cur;
 
-		// calc moving distance in visibility range and minimum distance
-		var d_vis = this.v_cur * this.t_vis;
-		var d_min = this.v_cur * this.t_min;
-
 		// if there is no mobj ahead, accelerate if possible
-		if (this.node.prev == null)
+		if (this.node.prev.data == null)
       {
          // change lane to the right if possible
-         if (!this.change_lane(this.lane.right, d_vis))
+         if (!this.change_lane(this.lane.right, this.d_vis))
             // otherwise speedup
 			   this.accelerate(this.v_max);
 			return;
@@ -112,10 +126,10 @@ class MovingObject
       var prev = this.node.prev.data;
 
 		// if prev mobj is too far ahead, accelerate if possible
-      if (this.d_pos < prev.d_pos - d_vis)
+      if (this.d_pos < prev.d_pos - this.d_vis)
       {
          // change lane to the right if possible
-         if (!this.change_lane(this.lane.right, d_vis))
+         if (!this.change_lane(this.lane.right, this.d_vis))
             // otherwise speedup
 			   this.accelerate(this.v_max);
 			return;
@@ -132,10 +146,10 @@ class MovingObject
 		}
 
 		// if minimum distance is not maintained, decelerate
-		if (this.d_pos > prev.d_pos - d_min)
+		if (this.d_pos > prev.d_pos - this.d_min)
 		{
          // if possible change lane
-         if (!this.change_lane(this.lane.left, d_min))
+         if (!this.change_lane(this.lane.left, this.d_min))
             // otherwise decelerate
 			   this.decelerate(prev.v_cur - this.v_diff);
 		}
@@ -148,7 +162,7 @@ class MovingObject
 // #endif
 */
 		// if prev mobj is within visibility
-		else if (this.d_pos > prev.d_pos - d_vis)
+		else if (this.d_pos > prev.d_pos - this.d_vis)
 		{
 			// if approach speed difference is higher than valid, decelerate
 			if (this.v_cur - prev.v_cur > this.v_diff)
@@ -159,15 +173,11 @@ class MovingObject
 	}
 
 
-   unlink()
+   relink(node)
    {
-      // check if this is the last mobj on the current lane and remove it in case
-      if (this.node.next == null)
-         this.lane.unlink_last();
-      else if (this.node.prev == null)
-         this.lane.unlink_first();
-      else
-         this.lane.unlink(this);
+      console.log(this + " changing lane");
+      this.node.unlink();
+      node.append(this.node);
    }
 
 
@@ -179,14 +189,10 @@ class MovingObject
       // get object ahead on the left lane
       var lobj = dst.ahead_of(this.d_pos);
 
-      // if there is no one
+      // if there is no mobj ahead
       if (lobj == null)
       {
-         // check if this is the last mobj on the current lane and remove it in case
-         this.unlink();
-
-         // append mobj to the head of the left lane
-         dst.append_first(this);
+         this.relink(dst.first);
       }
       else
       {
@@ -194,18 +200,10 @@ class MovingObject
          if (this.d_pos >= lobj.d_pos - d_min)
             return 0;
          // check if minimun distance of mobj behind on dst lane is too small
-         if (lobj.node.next != null && lobj.node.next.data.d_pos + d_min >= this.d_pos)
+         if (lobj.node.next.data != null && lobj.node.next.data.d_pos + d_min >= this.d_pos)
             return 0;
 
-         // check if this is the last mobj on the current lane and remove it in case
-         this.unlink();
-
-         // insert this behind the neighbor on the left
-         // check if neigbor is last in lane
-         if (lobj.node.next == null)
-            dst.append_last(this);
-         else
-            dst.insert(lobj, this.node);
+         this.relink(lobj.node);
       }
 
       return 1;

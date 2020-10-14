@@ -13,6 +13,15 @@ const MOBJ_FAIL = 0.0;
 const NUM_LANES = 2;
 
 
+function is_null(a)
+{
+   if (a == null)
+      console.log("null pointer caught!");
+
+   return a == null;
+}
+
+
 /*! This class implements a simple (non-cryptographic) PRNG. It used to have
  * the ability to always start at the same seed which may be interesting to be
  * able to compare simulation data.
@@ -34,29 +43,44 @@ class SRandom
 
 class DListNode
 {
-   constructor(data)
+   constructor(data = null)
    {
       //! double linked list
-      this.prev = null;
-      this.next = null;
+      this.prev = null;    // previous means ahead
+      this.next = null;    // next means behind
       //! data pointer
       this.data = data;
    }
 
 
-   /*! Insert node directly behind this.
+   /*! Insert node directly before this.
+    * @param node Node to insert.
     */
    insert(node)
    {
       // safety check
-      if (node == null)
-         return;
-      console.log("DListNode.insert()");
-      node.next = this.next;
+      if (is_null(node)) return;
+
+      node.prev = this.prev;
+      node.next = this;
+      if (this.prev != null)
+         this.prev.next = node;
+      this.prev = node;
+   }
+
+
+   /*! Append node directly behind this.
+    * @param node Node to append.
+    */
+   append(node)
+   {
+      if (is_null(node)) return;
+
       node.prev = this;
+      node.next = this.next;
+      if (this.next != null)
+         this.next.prev = node;
       this.next = node;
-      if (node.next != null)
-         node.next.prev = node;
    }
 
 
@@ -64,7 +88,6 @@ class DListNode
     */
    unlink()
    {
-      console.log("DListNode.unlink()");
       if (this.prev != null)
          this.prev.next = this.next;
       if (this.next != null)
@@ -82,136 +105,29 @@ class Lane
    {
       //! lane id
       this.id = Lane.id_cnt++;
-      //! pointer to first mobj
-      this.first = null;
-      //! pointer to last mobj
-      this.last = this.first;
-      //! number of mobjs on the lane
-      this.length = 0;
+      //! pointer to first mobj, head element
+      this.first = new DListNode();
+      //! pointer to last mobj, tail element
+      this.last = new DListNode();
       //! neighbor lanes
       this.left = null;
       this.right = null;
+
+      this.first.next = this.last;
+      this.last.prev = this.first;
    }
 
 
-   /*! Append a new mobj to the end of the list.
+   /*! Determine length of list.
+    * @return Returns length of list, excluding the head and tail element.
     */
-   append_last(mobj)
+   get length()
    {
-      // create node list node
-      var node = new DListNode(mobj);
-      // backlink node to object
-      mobj.node = node;
-      mobj.lane = this;
-      // increase element counter
-      this.length++;
+      var i, node;
 
-      console.log("lane " + this.id + " appending last mobj id = " + mobj.id + ", length = " + this.length);
+      for (i = 0, node = this.first.next; node.data != null; node = node.next, i++);
 
-      // handle special case of first element
-      if (this.last == null)
-      {
-         this.first = this.last = node;
-         return;
-      }
-
-      // otherwise insert behind
-      node.prev = this.last;
-      this.last.next = node;
-      this.last = node;
-   }
-
-
-   /* Unlink (remove) the first mobj from the list.
-    */
-   unlink_first()
-   {
-      // safety check
-      if (this.first == null)
-         return;
-
-      this.length--;
-
-      console.log("lane " + this.id + " removing first mobj id = " + this.first.data.id + ", length = " + this.length);
-
-      // check if it is the last on the lane (no one behind)
-      if (this.first.next == null)
-      {
-         this.first = this.last = null;
-      }
-      else
-      {
-         this.first = this.first.next;
-         this.first.prev = null;
-      }
-   }
-
-
-   /* Unlink (remove) the last mobj from the list.
-    */
-   unlink_last()
-   {
-      // safety check
-      if (this.last == null)
-         return;
-
-      this.length--;
-
-      console.log("lane " + this.id + " removing last mobj id = " + this.first.data.id + ", length = " + this.length);
-
-      // check if it is the last one on the lane (no one ahead)
-      if (this.last.prev == null)
-      {
-         this.last = this.first = null;
-      }
-      else
-      {
-         this.last = this.last.prev;
-         this.last.next = null;
-      }
-   }
-
-
-   append_first(mobj)
-   {
-      // create node list node
-      var node = new DListNode(mobj);
-      // backlink node to object
-      mobj.node = node;
-      mobj.lane = this;
-      // increase element counter
-      this.length++;
-
-      console.log("lane " + this.id + " appending ahead mobj id = " + mobj.id + ", length = " + this.length);
-
-      if (this.first == null)
-      {
-         this.first = this.last = node;
-         return;
-      }
-
-      node.next = this.first;
-      this.first.prev = node;
-      this.first = node;
-   }
-
-
-   unlink(mobj)
-   {
-      mobj.lane.length--;
-      mobj.node.unlink();
-      console.log("lane " + this.id + " removing intermediate mobj id = " + mobj.id + ", length = " + mobj.lane.length);
-   }
-
-
-   insert(lobj, node)
-   {
-      //safety check
-      if (lobj.lane != this) console.log("ill lane!");
-      node.data.lane = this;
-      lobj.node.insert(node);
-      lobj.lane.length++;
-      console.log("lane " + this.id + " inserting intermediate mobj id = " + node.data.id + ", length = " + this.length);
+      return i;
    }
 
 
@@ -221,7 +137,7 @@ class Lane
     */
    ahead_of(d_pos)
    {
-      for (var node = this.last; node != null; node = node.prev)
+      for (var node = this.last.prev; node.data != null; node = node.prev)
          if (node.data.d_pos > d_pos)
             return node.data;
 
@@ -233,10 +149,8 @@ class Lane
    {
       this.integrity();
       // loop over all elements in the list
-      for (var node = this.first; node != null; node = node.next)
-      {
+      for (var node = this.first.next; node.data != null; node = node.next)
          node.data.recalc(t_cur);
-      }
    }
 
 
@@ -250,10 +164,10 @@ class Lane
          console.log("ERR3");
       if (this.last != null && this.last.next != null)
          console.log("ERR4");
-      var i, node;
-      for (i = 0, node = this.first; node != null; node = node.next, i++);
-      if (this.length != i)
-         console.log(i + " != " + this.length);
+      if (this.last.data != null)
+         console.log("ERR5");
+      if (this.first.data != null)
+         console.log("ERR6");
    }
 }
 
@@ -321,12 +235,18 @@ class TrafSim
       for (var i = 0; i < this.lanes.length; i++)
       {
          // remove mobjs which are out of scope of the lane
-         while (this.lanes[i].first != null && this.lanes[i].first.data.d_pos > this.d_max)
-            this.lanes[i].unlink_first();
+         for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; node = node.next)
+            node.unlink();
 
          // check if there are enough cars on the lane, otherwise append new ones
-         if (this.lanes[i].length < MAX_CARS_PER_LANE && (this.lanes[i].last == null || this.lanes[i].last.data.d_pos > MIN_ENTRY_POS))
-            this.lanes[i].append_last(new RandomCar());
+         if (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS)
+         {
+            var node = new DListNode(new RandomCar());
+            node.data.node = node;
+            node.data.lane = this.lanes[i];
+
+            this.lanes[i].last.insert(node);
+         }
 
          this.lanes[i].recalc(this.cur_frame);
       }
@@ -350,7 +270,7 @@ class TrafSim
       for (var j = 0; j < this.lanes.length; j++)
       {
          var i, node, mobj;
-         for (i = 0, node = this.lanes[j].first; node != null; i++, node = node.next)
+         for (i = 0, node = this.lanes[j].first.next; node.data != null; i++, node = node.next)
          {
             mobj = node.data;
             this.ctx.fillStyle = X11Colors[mobj.id*179%X11Colors.length].val;
