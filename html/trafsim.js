@@ -163,9 +163,17 @@ class Lane
    recalc(t_cur)
    {
       this.integrity();
-      // loop over all elements in the list
-      for (var node = this.first.next; node.data != null; node = node.next)
-         node.data.recalc(t_cur);
+      // loop as long as no lane change appeared (because of changes in the linked list)
+      for (var chg = 1; chg;)
+      {
+         // loop over all elements in the list
+         for (var node = this.first.next; node.data != null; node = node.next)
+         {
+            // restart loop in case of a lane change
+            if ((chg = node.data.recalc(t_cur)))
+               break;
+         }
+      }
    }
 
 

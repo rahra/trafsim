@@ -131,7 +131,7 @@ class MovingObject
    }
 
 
-   integrity()
+   integrity(t_cur)
    {
       // integrity checks
       var diff = this.old.v_cur - this.v_cur;
@@ -141,6 +141,8 @@ class MovingObject
          console.log(-diff + " > acc " + this.a_acc);
       if (this.old.d_pos >= this.d_pos && this.d_pos != 0)
          console.log("moving error: " + this.old.d_pos + " >= " + this.d_pos);
+      if (this.t_cur && t_cur - this.t_cur > 1)
+         console.log("timeskip: t_cur = " + t_cur + ", this.t_cur = " + this.t_cur);
    }
 
 
@@ -150,14 +152,19 @@ class MovingObject
    }
 
 
+   /*! The function does the actual simulation of a mobj.
+    * @param t_cur Current time frame to simulate. It is assumed that it is
+    * stepping by 1.
+    * @return The function returns 1 if a lane was changed, otherwise 0.
+    */
 	recalc(t_cur)
 	{
       // check if current frame already calculated
       if (this.t_cur >= t_cur)
-         return;
+         return 0;
 
       //console.log(this.log_data());
-      this.integrity();
+      this.integrity(t_cur);
       this.save();
       this.t_cur = t_cur;
 
@@ -172,7 +179,7 @@ class MovingObject
       {
          if (this.v_cur > 0)
             this.decelerate(0);
-			return;
+			return 0;
       }
 
 		// and move ahead
@@ -186,7 +193,7 @@ class MovingObject
       {
          // change lane to the right if possible
          if (this.change_back())
-            return;
+            return 1;
 
          // avoid passing right if enabled: check if there is lane on the left
          if (!PASS_RIGHT && this.lane.left != null)
@@ -198,13 +205,13 @@ class MovingObject
             {
                // and decelerate in case
                this.decelerate(node.data.v_cur);
-               return;
+               return 0;
             }
          }
 
          // otherwise speedup
          this.accelerate(this.v_max);
-			return;
+			return 0;
       }
 
 		// detect crash and immediately stop
@@ -217,24 +224,31 @@ class MovingObject
          if (this.a_dec > prev.a_dec)
             this.a_dec = prev.a_dec;
          this.decelerate(0);
-         return;
+         return 0;
 		}
 
 		// if minimum distance is not maintained
 		if (this.d_pos > prev.d_pos - this.d_min)
 		{
          // if possible change lane
-         if (!this.pass())
-            // otherwise decelerate
-			   this.decelerate(prev.v_cur - this.v_diff);
+         if (this.pass())
+            return 1;
+
+         // otherwise decelerate
+         this.decelerate(prev.v_cur - this.v_diff);
 		}
 		// if prev mobj is within visibility
 		else if (this.d_pos > prev.d_pos - this.d_vis)
 		{
+         if (this.pass())
+            return 1;
+
 			// if approach speed difference is higher than valid, decelerate
-         if (!this.pass() && this.v_cur - prev.v_cur > this.v_diff)
+         if (this.v_cur - prev.v_cur > this.v_diff)
 				this.decelerate(prev.v_cur + this.v_diff);
 		}
+
+      return 0;
 	}
 
 
