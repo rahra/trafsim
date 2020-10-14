@@ -1,6 +1,6 @@
 
-//! maximum number of cars per lane
-const MAX_CARS_PER_LANE = 30;
+//! maximum number of mobjs in the game
+const MAX_MOBJS = 100;
 //! new mobjs do not enter befor MIN_ENTRY_POS meters
 const MIN_ENTRY_POS = 500;
 //! maximum frames to calculate (0 for unlimited)
@@ -88,6 +88,10 @@ class DListNode
     */
    unlink()
    {
+      // safety check
+      if (this.data == null)
+         console.log("unlinking head or tail node!");
+
       if (this.prev != null)
          this.prev.next = this.next;
       if (this.next != null)
@@ -133,15 +137,17 @@ class Lane
 
    /*! Return mobj which is directly ahead of position d_pos.
     * @param d_pos Position from which to look ahead.
-    * @return Returns the mobj object ahead, or null if there is no mobj ahead.
+    * @return Returns the DListNode of the object ahead.
     */
    ahead_of(d_pos)
    {
-      for (var node = this.last.prev; node.data != null; node = node.prev)
-         if (node.data.d_pos > d_pos)
-            return node.data;
+      var node;
 
-      return null;
+      for (node = this.last.prev; node.data != null; node = node.prev)
+         if (node.data.d_pos > d_pos)
+            break;
+
+      return node;
    }
 
 
@@ -191,6 +197,8 @@ class TrafSim
       this.d_max = rlen;
       this.d_min = 0;
 
+      this.mobj_cnt = 0;
+
       this.init_lanes();
    }
 
@@ -235,16 +243,18 @@ class TrafSim
       for (var i = 0; i < this.lanes.length; i++)
       {
          // remove mobjs which are out of scope of the lane
-         for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; node = node.next)
+         for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; node = node.next, this.mobj_cnt--)
             node.unlink();
 
-         // check if there are enough cars on the lane, otherwise append new ones
-         if (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS)
+
+         // fill in new mobjs on 1st lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
+         if (this.mobj_cnt < MAX_MOBJS && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
          {
             // create and init new mobj and list node
             var node = new DListNode(new RandomCar());
             node.data.node = node;
             node.data.lane = this.lanes[i];
+            this.mobj_cnt++;
 
             // and append it to the lane
             this.lanes[i].last.insert(node);

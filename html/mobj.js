@@ -71,7 +71,7 @@ class MovingObject
     */
    decelerate(v_min)
    {
-      this.v_cur = Math.max(this.v_cur - this.a_dec, v_min);
+      this.v_cur = Math.max(this.v_cur - this.a_dec, v_min, 0);
    }
 
 
@@ -81,8 +81,14 @@ class MovingObject
    {
       this.old.v_cur = this.v_cur;
       this.old.d_pos = this.d_pos;
-      this.old.prev = this.node.prev != null ? this.node.prev.data : null;
-      this.old.next = this.node.next != null ? this.node.next.data : null;
+      this.old.prev = this.node.prev;
+      this.old.next = this.node.next;
+   }
+
+
+   log_data()
+   {
+      return "id:" + this.id + ",v_cur:" + this.v_cur + ",d_pos:" + this.d_pos + ",t_cur:" + this.t_cur + ",lane:" + this.lane.id + ",crash:" + this.crash + ",";
    }
 
 
@@ -92,6 +98,7 @@ class MovingObject
       if (this.t_cur >= t_cur)
          return;
 
+      //console.log(this.log_data());
       this.save();
       this.t_cur = t_cur;
 
@@ -103,11 +110,7 @@ class MovingObject
 
 		// crashed mobjs don't do anything accept stopping immediately
 		if (this.crash)
-		{
-         if (this.v_cur > 0)
-            this.decelerate(0);
 			return;
-      }
 
 		// and move ahead
 		this.d_pos += this.v_cur;
@@ -119,19 +122,19 @@ class MovingObject
       if (prev == null || this.d_pos < prev.d_pos - this.d_vis)
       {
          // change lane to the right if possible
-         if (!this.change_lane(this.lane.right, this.d_vis))
+         if (!this.change_lane(this.lane.right))
             // otherwise speedup
 			   this.accelerate(this.v_max);
 			return;
       }
 
-		// detect crash and immediately start to decelerate
+		// detect crash and immediately stop
 		if (this.d_pos >= prev.d_pos)
 		{
 			console.log(this + " crashed into " + prev);
 			this.crash = prev.crash = 1;
          this.d_pos = prev.d_pos;
-			this.decelerate(0);
+			this.v_cur = prev.v_cur = 0;
          return;
 		}
 
@@ -139,7 +142,7 @@ class MovingObject
 		if (this.d_pos > prev.d_pos - this.d_min)
 		{
          // if possible change lane
-         if (!this.change_lane(this.lane.left, this.d_min))
+         if (!this.change_lane(this.lane.left))
             // otherwise decelerate
 			   this.decelerate(prev.v_cur - this.v_diff);
 		}
@@ -147,7 +150,7 @@ class MovingObject
 		else if (this.d_pos > prev.d_pos - this.d_vis)
 		{
 			// if approach speed difference is higher than valid, decelerate
-			if (this.v_cur - prev.v_cur > this.v_diff)
+         if (!this.change_lane(this.lane.left) && this.v_cur - prev.v_cur > this.v_diff)
 				this.decelerate(prev.v_cur + this.v_diff);
 		}
 	}
@@ -155,41 +158,36 @@ class MovingObject
 
    /*! Unlink this node from the current list and relink it behind node.
     */
-   relink(node)
+   relink(node, lane)
    {
-      console.log(this + " changing lane");
+      console.log(this + " changing lane to " + lane.id + " behind id = " + (node.data != null ? node.data.id : -1));
+      // unlink this object from current list
       this.node.unlink();
+      // append to new list behind node
       node.append(this.node);
+      // change lane of this to new lane
+      this.lane = lane;
    }
 
 
    /*! Check if lane change to dst lane ist possible and execute change in case.
     * @param dst Destination lane.
-    * @param d_min Minimum distance to next mobj on destination lane.
     * @return Returns 1 of lane was changed, otherwise 0.
     */
-   change_lane(dst, d_min)
+   change_lane(dst)
    {
       // safety check
       if (dst == null)
          return 0;
 
       // get object ahead on the left lane
-      var lobj = dst.ahead_of(this.d_pos + d_min);
+      var node = dst.ahead_of(this.d_pos + this.d_vis);
 
-      // if there is no mobj ahead
-      if (lobj == null)
-      {
-         this.relink(dst.first);
-      }
-      else
-      {
-         // check if minimun distance of mobj behind on dst lane is too small
-         if (lobj.node.next.data != null && lobj.node.next.data.d_pos + d_min >= this.d_pos)
-            return 0;
+      // check if minimun distance of mobj behind on dst lane is too small
+      if (node.next.data != null && node.next.data.d_pos + this.d_vis >= this.d_pos)
+         return 0;
 
-         this.relink(lobj.node);
-      }
+      this.relink(node, dst);
 
       return 1;
    }
