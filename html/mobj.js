@@ -112,21 +112,11 @@ class MovingObject
 		// and move ahead
 		this.d_pos += this.v_cur;
 
-		// if there is no mobj ahead, accelerate if possible
-		if (this.node.prev.data == null)
-      {
-         // change lane to the right if possible
-         if (!this.change_lane(this.lane.right, this.d_vis))
-            // otherwise speedup
-			   this.accelerate(this.v_max);
-			return;
-		}
-
       // get previous mobject
       var prev = this.node.prev.data;
 
-		// if prev mobj is too far ahead, accelerate if possible
-      if (this.d_pos < prev.d_pos - this.d_vis)
+		// if there is no mobj ahead or the prev mobj is too far ahead
+      if (prev == null || this.d_pos < prev.d_pos - this.d_vis)
       {
          // change lane to the right if possible
          if (!this.change_lane(this.lane.right, this.d_vis))
@@ -138,14 +128,14 @@ class MovingObject
 		// detect crash and immediately start to decelerate
 		if (this.d_pos >= prev.d_pos)
 		{
-			console.log("mobj " + this.id + " crashes");
+			console.log(this + " crashed into " + prev);
 			this.crash = prev.crash = 1;
          this.d_pos = prev.d_pos;
 			this.decelerate(0);
          return;
 		}
 
-		// if minimum distance is not maintained, decelerate
+		// if minimum distance is not maintained
 		if (this.d_pos > prev.d_pos - this.d_min)
 		{
          // if possible change lane
@@ -153,26 +143,18 @@ class MovingObject
             // otherwise decelerate
 			   this.decelerate(prev.v_cur - this.v_diff);
 		}
-/*
-// #ifdef MTAIN_CONSTSPEED
-		else if (this.d_pos > prev.d_pos - d_min * 1.5)
-		{
-			this.decelerate(prev.v_cur);
-		}
-// #endif
-*/
 		// if prev mobj is within visibility
 		else if (this.d_pos > prev.d_pos - this.d_vis)
 		{
 			// if approach speed difference is higher than valid, decelerate
 			if (this.v_cur - prev.v_cur > this.v_diff)
 				this.decelerate(prev.v_cur + this.v_diff);
-	/*      else if (this.v_cur - prev.v_cur < this.v_diff)
-				this.accelerate(prev.v_cur + this.v_diff);*/
 		}
 	}
 
 
+   /*! Unlink this node from the current list and relink it behind node.
+    */
    relink(node)
    {
       console.log(this + " changing lane");
@@ -181,13 +163,19 @@ class MovingObject
    }
 
 
+   /*! Check if lane change to dst lane ist possible and execute change in case.
+    * @param dst Destination lane.
+    * @param d_min Minimum distance to next mobj on destination lane.
+    * @return Returns 1 of lane was changed, otherwise 0.
+    */
    change_lane(dst, d_min)
    {
+      // safety check
       if (dst == null)
          return 0;
 
       // get object ahead on the left lane
-      var lobj = dst.ahead_of(this.d_pos);
+      var lobj = dst.ahead_of(this.d_pos + d_min);
 
       // if there is no mobj ahead
       if (lobj == null)
@@ -196,9 +184,6 @@ class MovingObject
       }
       else
       {
-         // check if minimum distance of next mobj on dst lane too small
-         if (this.d_pos >= lobj.d_pos - d_min)
-            return 0;
          // check if minimun distance of mobj behind on dst lane is too small
          if (lobj.node.next.data != null && lobj.node.next.data.d_pos + d_min >= this.d_pos)
             return 0;
@@ -208,6 +193,7 @@ class MovingObject
 
       return 1;
    }
+
 
    static kmh2ms(x)
    {
