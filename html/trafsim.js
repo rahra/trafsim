@@ -211,6 +211,8 @@ class TrafSim
       this.avg_speed = 0;
       this.avg_cnt = 0;
 
+      this.running = 1;
+
       this.init_lanes();
    }
 
@@ -269,6 +271,15 @@ class TrafSim
     */
    next_frame()
    {
+      if (!this.running)
+         return;
+
+      if (this.running < 0 && (-this.running <= this.cur_frame))
+      {
+         this.running = 0;
+         return;
+      }
+
       // increase frame counter
       this.cur_frame++;
 
@@ -293,6 +304,7 @@ class TrafSim
             node.data.node = node;
             node.data.lane = this.lanes[i];
             node.data.t_init = this.cur_frame;
+            node.data.save();
             this.mobj_cnt++;
 
             // and append it to the lane
@@ -357,6 +369,29 @@ class TrafSim
 
       //this.ctx.restore();
    }
+
+
+   key_down_handler(e)
+   {
+      console.log(e.key);
+      switch (e.key)
+      {
+         case ' ':
+            this.running = !this.running;
+            break;
+
+         case 's':
+            if (!this.running)
+               this.running = -(this.cur_frame + 1);
+            break;
+
+         case 'S':
+            if (!this.running)
+               this.running = -(this.cur_frame + 25);
+            break;
+
+      }
+   }
 }
 
 
@@ -372,6 +407,7 @@ ts.scaling();
 ts.draw();
 
 window.addEventListener('resize', function(e){ts.scaling(); ts.draw();});
+document.addEventListener('keydown', function(e){ts.key_down_handler(e);});
 ts.timer = window.setInterval(function(){ts.draw(); ts.next_frame();}, 40);
 
 
