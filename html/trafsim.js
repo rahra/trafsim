@@ -233,6 +233,12 @@ class TrafSim
    }
 
 
+   gen_mobj()
+   {
+      return new DListNode(MObjFactory.make());
+   }
+
+
    /*! Calculate next time frame of simulation.
     */
    next_frame()
@@ -251,7 +257,7 @@ class TrafSim
          if ((!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
          {
             // create and init new mobj and list node
-            var node = new DListNode(new RandomCar());
+            var node = this.gen_mobj();
             node.data.node = node;
             node.data.lane = this.lanes[i];
             this.mobj_cnt++;

@@ -242,3 +242,78 @@ class RandomCar extends MovingObject
    }
 }
 
+
+class RandomTruck extends MovingObject
+{
+   constructor(node = null)
+   {
+      super(node);
+      this.v_max = MovingObject.kmh2ms(70) + MovingObject.kmh2ms(20) * SRandom.rand();
+      this.v_cur = this.v_max - MovingObject.kmh2ms(20) * SRandom.rand();
+      this.v_diff = MovingObject.kmh2ms(5);
+
+      this.t_vis = 5.0;
+      this.t_min = 2.0;
+      this.a_acc = this.v_max / 40.0;
+      this.a_dec = this.v_max / 20.0;
+   }
+}
+
+
+class RandomTruck extends MovingObject
+{
+   constructor(node = null)
+   {
+      super(node);
+      this.v_max = MovingObject.kmh2ms(100) + MovingObject.kmh2ms(70) * SRandom.rand();
+      this.v_cur = this.v_max - MovingObject.kmh2ms(70) * SRandom.rand();
+      this.v_diff = MovingObject.kmh2ms(5);
+
+      this.t_vis = 5.0;
+      this.t_min = 2.0;
+      this.a_acc = this.v_max / 10.0;
+      this.a_dec = this.v_max / 5.0;
+   }
+}
+
+
+class BlockingCar extends MovingObject
+{
+   constructor(node = null)
+   {
+      super(node);
+      this.v_max = MovingObject.kmh2ms(100) + MovingObject.kmh2ms(30) * SRandom.rand();
+      this.v_cur = this.v_max - MovingObject.kmh2ms(30) * SRandom.rand();
+      this.v_diff = MovingObject.kmh2ms(5);
+
+      this.t_vis = 5.0;
+      this.t_min = 2.0;
+      this.a_acc = this.v_max / 20.0;
+      this.a_dec = this.v_max / 10.0;
+
+      this.p_right = 0.5;
+   }
+}
+
+
+class MObjFactory
+{
+   static make(type = "car")
+   {
+      switch (type)
+      {
+         case "truck":
+            return new RandomTruck();
+         case "bike":
+            return new RandomBike();
+         case "blocking":
+            return new BlockingCar();
+         default:
+            console.log("*** unknown mobj type: " + type);
+            // intenionally there's no break
+         case "car":
+            return new RandomCar();
+      }
+   }
+}
+
