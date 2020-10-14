@@ -250,7 +250,10 @@ class TrafSim
       {
          // remove mobjs which are out of scope of the lane
          for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; node = node.next, this.mobj_cnt--)
+         {
             node.unlink();
+            console.log("removed " + node.data + ", type = " + node.data.constructor.name + ", time = " + (this.cur_frame - node.data.t_init) + ", avg_speed = " + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init)));
+         }
 
 
          // fill in new mobjs on 1st lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
@@ -260,6 +263,7 @@ class TrafSim
             var node = this.gen_mobj();
             node.data.node = node;
             node.data.lane = this.lanes[i];
+            node.data.t_init = this.cur_frame;
             this.mobj_cnt++;
 
             // and append it to the lane
@@ -293,7 +297,8 @@ class TrafSim
             mobj = node.data;
 
             // draw mobj
-            this.ctx.fillStyle = this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
+            //this.ctx.fillStyle = this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
+            this.ctx.fillStyle = this.ctx.strokeStyle = mobj.color;
             this.ctx.beginPath();
             this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20 + (this.lanes.length - j - 1) * 5, p, p);
             this.ctx.fill();

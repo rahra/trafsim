@@ -34,6 +34,10 @@ class MovingObject
       this.p_pass = 1.0;
       //! probabilty one would change back to the right lanes
       this.p_right = 1.0;
+      //! display color
+      this.color = "grey";
+      //! initial time frame (should be set on creation)
+      this.t_init = 0;
 
       //! backup data
       this.old = {v_cur: this.v_cur, d_pos: this.d_pos, prev: null, next: null};
@@ -164,7 +168,7 @@ class MovingObject
     */
    relink(node, lane)
    {
-      console.log(this + " changing lane to " + lane.id + " behind id = " + (node.data != null ? node.data.id : -1));
+      //console.log(this + " changing lane to " + lane.id + " behind id = " + (node.data != null ? node.data.id : -1));
       // unlink this object from current list
       this.node.unlink();
       // append to new list behind node
@@ -256,11 +260,13 @@ class RandomTruck extends MovingObject
       this.t_min = 2.0;
       this.a_acc = this.v_max / 40.0;
       this.a_dec = this.v_max / 20.0;
+
+      this.color = "blue";
    }
 }
 
 
-class RandomTruck extends MovingObject
+class RandomBike extends MovingObject
 {
    constructor(node = null)
    {
@@ -273,6 +279,8 @@ class RandomTruck extends MovingObject
       this.t_min = 2.0;
       this.a_acc = this.v_max / 10.0;
       this.a_dec = this.v_max / 5.0;
+
+      this.color = "green";
    }
 }
 
@@ -292,6 +300,8 @@ class BlockingCar extends MovingObject
       this.a_dec = this.v_max / 10.0;
 
       this.p_right = 0.5;
+
+      this.color = "red";
    }
 }
 
