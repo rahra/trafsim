@@ -130,7 +130,11 @@ class MovingObject
 
 		// crashed mobjs don't do anything accept stopping immediately
 		if (this.crash)
+      {
+         if (this.v_cur > 0)
+            this.decelerate(0);
 			return;
+      }
 
 		// and move ahead
 		this.d_pos += this.v_cur;
@@ -168,8 +172,11 @@ class MovingObject
 		{
 			console.log(this + " crashed into " + prev);
 			this.crash = prev.crash = 1;
-         this.d_pos = prev.d_pos;
-			this.v_cur = prev.v_cur = 0;
+         this.d_pos = prev.d_pos - 5;  // stop 5 m before
+         this.v_cur = prev.v_cur;
+         if (this.a_dec > prev.a_dec)
+            this.a_dec = prev.a_dec;
+         this.decelerate(0);
          return;
 		}
 
