@@ -1,5 +1,5 @@
 
-//! maximum number of mobjs in the game
+//! maximum number of mobjs in the game (0 for unlimited)
 const MAX_MOBJS = 100;
 //! new mobjs do not enter befor MIN_ENTRY_POS meters
 const MIN_ENTRY_POS = 500;
@@ -248,7 +248,7 @@ class TrafSim
 
 
          // fill in new mobjs on 1st lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
-         if (this.mobj_cnt < MAX_MOBJS && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
+         if ((!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
          {
             // create and init new mobj and list node
             var node = new DListNode(new RandomCar());
