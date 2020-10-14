@@ -58,7 +58,7 @@ class MovingObject
 
    toString()
    {
-      return "mobj id = " + this.id;
+      return this.constructor.name + ".id = " + this.id;
    }
 
 
@@ -82,8 +82,20 @@ class MovingObject
     */
    accelerate(v_max)
    {
-      // increase speed to the max if not already reached
-      this.v_cur = Math.min(this.v_cur + this.a_acc, Math.min(v_max, this.v_max));
+      // make sure max desired speed is not higher than possible
+      if (v_max > this.v_max)
+         v_max = this.v_max;
+
+      // check if max speed already reached
+      if (this.v_cur >= v_max)
+         return;
+
+      // accelerate
+      this.v_cur += this.a_acc;
+
+      // make sure make speed is not exceeded after acceleration
+      if (this.v_cur > v_max)
+         this.v_cur = v_max;
    }
 
 
@@ -91,7 +103,20 @@ class MovingObject
     */
    decelerate(v_min)
    {
-      this.v_cur = Math.max(this.v_cur - this.a_dec, v_min, 0);
+      // make sure mobj is not running backward
+      if (v_min < 0)
+         v_min = 0;
+
+      // check if speed is already low enough
+      if (this.v_cur <= v_min)
+         return;
+
+      // decelerate
+      this.v_cur -= this.a_dec;
+
+      // make sure car does not run backwards after deceleration
+      if (this.v_cur < v_min)
+         this.v_cur = v_min;
    }
 
 
@@ -103,6 +128,19 @@ class MovingObject
       this.old.d_pos = this.d_pos;
       this.old.prev = this.node.prev;
       this.old.next = this.node.next;
+   }
+
+
+   integrity()
+   {
+      // integrity checks
+      var diff = this.old.v_cur - this.v_cur;
+      if (diff > 0 && diff > (this.a_dec + 0.1))
+         console.log(diff + " > dec " + this.a_dec);
+      if (diff < 0 && -diff > (this.a_acc + 0.1))
+         console.log(-diff + " > acc " + this.a_acc);
+      if (this.old.d_pos >= this.d_pos && this.d_pos != 0)
+         console.log("moving error: " + this.old.d_pos + " >= " + this.d_pos);
    }
 
 
@@ -119,6 +157,7 @@ class MovingObject
          return;
 
       //console.log(this.log_data());
+      this.integrity();
       this.save();
       this.t_cur = t_cur;
 
@@ -162,6 +201,7 @@ class MovingObject
                return;
             }
          }
+
          // otherwise speedup
          this.accelerate(this.v_max);
 			return;
