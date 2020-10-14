@@ -30,6 +30,10 @@ class MovingObject
       this.lane = null;
       //! frame of current state
       this.t_cur = 0;
+      //! probabilty one would pass left
+      this.p_pass = 1.0;
+      //! probabilty one would change back to the right lanes
+      this.p_right = 1.0;
 
       //! backup data
       this.old = {v_cur: this.v_cur, d_pos: this.d_pos, prev: null, next: null};
@@ -122,7 +126,7 @@ class MovingObject
       if (prev == null || this.d_pos < prev.d_pos - this.d_vis)
       {
          // change lane to the right if possible
-         if (!this.change_lane(this.lane.right))
+         if (!this.change_back())
             // otherwise speedup
 			   this.accelerate(this.v_max);
 			return;
@@ -142,7 +146,7 @@ class MovingObject
 		if (this.d_pos > prev.d_pos - this.d_min)
 		{
          // if possible change lane
-         if (!this.change_lane(this.lane.left))
+         if (!this.pass())
             // otherwise decelerate
 			   this.decelerate(prev.v_cur - this.v_diff);
 		}
@@ -150,7 +154,7 @@ class MovingObject
 		else if (this.d_pos > prev.d_pos - this.d_vis)
 		{
 			// if approach speed difference is higher than valid, decelerate
-         if (!this.change_lane(this.lane.left) && this.v_cur - prev.v_cur > this.v_diff)
+         if (!this.pass() && this.v_cur - prev.v_cur > this.v_diff)
 				this.decelerate(prev.v_cur + this.v_diff);
 		}
 	}
@@ -174,10 +178,14 @@ class MovingObject
     * @param dst Destination lane.
     * @return Returns 1 of lane was changed, otherwise 0.
     */
-   change_lane(dst)
+   change_lane(dst, p)
    {
       // safety check
       if (dst == null)
+         return 0;
+
+      // check lane change probability
+      if (SRandom.rand() > p)
          return 0;
 
       // get object ahead on the left lane
@@ -190,6 +198,18 @@ class MovingObject
       this.relink(node, dst);
 
       return 1;
+   }
+
+
+   change_back()
+   {
+      return this.change_lane(this.lane.right, this.p_right);
+   }
+
+
+   pass()
+   {
+      return this.change_lane(this.lane.left, this.p_pass);
    }
 
 
