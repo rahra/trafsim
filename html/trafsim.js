@@ -241,10 +241,12 @@ class TrafSim
          // check if there are enough cars on the lane, otherwise append new ones
          if (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS)
          {
+            // create and init new mobj and list node
             var node = new DListNode(new RandomCar());
             node.data.node = node;
             node.data.lane = this.lanes[i];
 
+            // and append it to the lane
             this.lanes[i].last.insert(node);
          }
 
@@ -273,11 +275,26 @@ class TrafSim
          for (i = 0, node = this.lanes[j].first.next; node.data != null; i++, node = node.next)
          {
             mobj = node.data;
-            this.ctx.fillStyle = X11Colors[mobj.id*179%X11Colors.length].val;
+
+            // draw mobj
+            this.ctx.fillStyle = this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
             this.ctx.beginPath();
             this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20 + (this.lanes.length - j - 1) * 5, p, p);
             this.ctx.fill();
 
+            // draw visibility range of mobj
+            this.ctx.beginPath();
+            this.ctx.moveTo((mobj.d_pos - this.d_min) * this.sx + p, 20 + (this.lanes.length - j - 1) * 5 + p * 0.5);
+            this.ctx.lineTo((mobj.d_pos - this.d_min + mobj.d_vis) * this.sx + p, 20 + (this.lanes.length - j - 1) * 5 + p * 0.5);
+            this.ctx.stroke();
+
+            // draw speed curve
+            this.ctx.beginPath();
+            this.ctx.moveTo((mobj.old.d_pos - this.d_min) * this.sx, 300 - mobj.old.v_cur * 3);
+            this.ctx.lineTo((mobj.d_pos - this.d_min) * this.sx, 300 - mobj.v_cur * 3);
+            this.ctx.stroke();
+
+            // draw crash box
             if (mobj.crash)
             {
                this.ctx.strokeStyle = "red";
@@ -285,12 +302,6 @@ class TrafSim
                this.ctx.rect((mobj.d_pos - this.d_min) * this.sx - 1, 20 + (this.lanes.length - j - 1) * 5 - 1, p+2, p+2);
                this.ctx.stroke();
             }
-
-            this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
-            this.ctx.beginPath();
-            this.ctx.moveTo((mobj.old.d_pos - this.d_min) * this.sx, 300 - mobj.old.v_cur * 3);
-            this.ctx.lineTo((mobj.d_pos - this.d_min) * this.sx, 300 - mobj.v_cur * 3);
-            this.ctx.stroke();
          }
       }
 
