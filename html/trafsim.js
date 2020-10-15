@@ -217,6 +217,7 @@ class Lane
    {
       //! max number of iterations to prevent endless loop
       const MAX_LOOP = 10;
+      var crash_cnt = 0;
 
       this.integrity();
       // loop as long as no lane change appeared (because of changes in the linked list)
@@ -232,11 +233,15 @@ class Lane
                node = this.first.next;
                break;
             }
+            if (act == MOBJ_ACT.CRASH)
+               crash_cnt++;
          }
       }
 
       if (i >= MAX_LOOP)
          console.log("probably endless loop in recalc()");
+
+      return crash_cnt;
    }
 
 
@@ -279,6 +284,7 @@ class TrafSim
       this.d_min = 0;
 
       this.mobj_cnt = 0;
+      this.crash_cnt = 0;
 
       this.avg_speed = 0;
       this.avg_cnt = 0;
@@ -357,6 +363,8 @@ class TrafSim
       document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame);
       document.getElementById("avg_speed").textContent = this.avg_speed.toFixed(1);
       document.getElementById("tput").textContent = (this.avg_cnt / this.cur_frame * 3600).toFixed(1);
+      document.getElementById("mobj_cnt").textContent = this.mobj_cnt;
+      document.getElementById("crash_cnt").textContent = this.crash_cnt;
 
       for (var i = 0; i < this.lanes.length; i++)
       {
@@ -369,6 +377,7 @@ class TrafSim
             var div = this.avg_cnt < MAX_AVG_CNT ? this.avg_cnt : MAX_AVG_CNT;
             this.avg_speed = (this.avg_speed * div + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (div + 1);
             this.avg_cnt++;
+            this.mobj_cnt--;
         }
 
 
@@ -387,7 +396,7 @@ class TrafSim
             this.lanes[i].last.insert(node);
          }
 
-         this.lanes[i].recalc(this.cur_frame);
+         this.crash_cnt += this.lanes[i].recalc(this.cur_frame);
       }
 
       if (MAX_FRAMES && this.cur_frame >= MAX_FRAMES)
