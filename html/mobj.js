@@ -400,6 +400,14 @@ class Truck extends MovingObject
          }
       );
    }
+
+
+   // trucks will only use the 1st and 2nd lane, and occassionly the 3rd
+   get p_pass_left()
+   {
+      if (this.lane.id < 2) return 0;
+      return this.lane.id < 1 ? 0.3 : 1;
+   }
 }
 
 
@@ -450,6 +458,10 @@ class BlockingCar extends MovingObject
     */
    get p_right()
    {
+      // higher right probability if it is on the left-most lane
+      if (this.lane.left == null)
+         return 0.3;
+
       // if there is no mobj behind or too far away don't change lane back
       if (this.node.next.data == null || this.node.next.data.d_pos < this.d_pos - this.d_vis)
          return 0;
