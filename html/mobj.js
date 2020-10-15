@@ -146,21 +146,18 @@ class MovingObject
    integrity(t_cur)
    {
       // integrity checks
+      //console.log("id:" + this.id + ",v_cur:" + this.v_cur + ",d_pos:" + this.d_pos + ",t_cur:" + this.t_cur + ",lane:" + this.lane.id + ",crash:" + this.crash + ",");
       var diff = this.old.v_cur - this.v_cur;
       if (diff > 0 && diff > (this.a_dec + 0.1))
          console.log(diff + " > dec " + this.a_dec);
       if (diff < 0 && -diff > (this.a_acc + 0.1))
          console.log(-diff + " > acc " + this.a_acc);
-      if (!this.crash && this.old.d_pos >= this.d_pos && this.d_pos != 0)
-         console.log("moving error: " + this.old.d_pos + " >= " + this.d_pos);
+      if (this.old.d_pos > this.d_pos && this.d_pos != 0)
+         console.log("moving error: " + this.old.d_pos + " > " + this.d_pos);
       if (this.t_cur && t_cur - this.t_cur > 1)
          console.log("timeskip: t_cur = " + t_cur + ", this.t_cur = " + this.t_cur);
-   }
-
-
-   log_data()
-   {
-      return "id:" + this.id + ",v_cur:" + this.v_cur + ",d_pos:" + this.d_pos + ",t_cur:" + this.t_cur + ",lane:" + this.lane.id + ",crash:" + this.crash + ",";
+      if (this.v_cur < 0)
+         console.log("moving backwards: " + this.v_cur);
    }
 
 
@@ -175,7 +172,6 @@ class MovingObject
       if (this.t_cur >= t_cur)
          return MOBJ_ACT.NONE;
 
-      //console.log(this.log_data());
       this.integrity(t_cur);
       this.save();
       this.t_cur = t_cur;
@@ -208,21 +204,22 @@ class MovingObject
          if (SRandom.rand_ev(this.p_right) && this.change_right())
             return MOBJ_ACT.RIGHT;
 
-         // if mobj is not willing to pass right
-         if (!SRandom.rand_ev(this.p_pass_right))
+         // loop over all lanes on the left
+         for (var lane = this.lane.left; lane != null; lane = lane.left)
          {
-            // loop over all lanes on the left
-            for (var lane = this.lane.left; lane != null; lane = lane.left)
+            // get object ahead on the left lane
+            var node = lane.ahead_of(this.d_pos);
+
+            // continue at next lane if no mobj ahead
+            if (node.data == null)
+               continue;
+
+            // check if object is within minimum distance
+            if (!node.data.crash && node.data.d_pos < this.d_pos + this.d_min && !SRandom.rand_ev(this.p_pass_right))
             {
-               // get object ahead on the left lane
-               var node = lane.ahead_of(this.d_pos);
-               // check if object is within minimum distance
-               if (node.data != null && node.data.d_pos < this.d_pos + this.d_min)
-               {
-                  // and decelerate in case
-                  this.decelerate(node.data.v_cur);
-                  return MOBJ_ACT.DEC;
-               }
+               // and decelerate in case
+               this.decelerate(node.data.v_cur);
+               return MOBJ_ACT.DEC;
             }
          }
 
@@ -236,7 +233,7 @@ class MovingObject
 		{
 			console.log(this + " crashed into " + prev);
 			this.crash = prev.crash = 1;
-         this.d_pos = prev.d_pos - 5;  // stop 5 m before
+         this.d_pos = prev.d_pos;
          this.v_cur = prev.v_cur;
          if (this.a_dec > prev.a_dec)
             this.a_dec = prev.a_dec;
@@ -248,11 +245,11 @@ class MovingObject
 		if (this.d_pos > prev.d_pos - this.d_min)
 		{
          // if possible change lane to the left
-         if (SRandom.rand_ev(this.p_pass_left) && this.change_left())
+         if ((prev.crash || SRandom.rand_ev(this.p_pass_left)) && this.change_left())
             return MOBJ_ACT.LEFT;
 
          // or if possible change lane to the right
-         if (SRandom.rand_ev(this.p_pass_right) && this.change_right())
+         if ((prev.crash || SRandom.rand_ev(this.p_pass_right)) && this.change_right())
             return MOBJ_ACT.RIGHT;
 
          // otherwise decelerate
@@ -261,11 +258,11 @@ class MovingObject
 		// if prev mobj is within visibility
 		else if (this.d_pos > prev.d_pos - this.d_vis)
 		{
-         if (SRandom.rand_ev(this.p_pass_left) && this.change_left())
+         if ((prev.crash || SRandom.rand_ev(this.p_pass_left)) && this.change_left())
             return MOBJ_ACT.LEFT;
 
          // or if possible change lane to the right
-         if (SRandom.rand_ev(this.p_pass_right) && this.change_right())
+         if ((prev.crash || SRandom.rand_ev(this.p_pass_right)) && this.change_right())
             return MOBJ_ACT.RIGHT;
 
 			// if approach speed difference is higher than valid, decelerate
@@ -370,7 +367,7 @@ class Car extends MovingObject
             v_max_lo: MovingObject.kmh2ms(100),
             v_max_hi: MovingObject.kmh2ms(150),
             v_diff: MovingObject.kmh2ms(5),
-            t_vis: 10,
+            t_vis: 14,
             t_min: 2,
             a_acc: 1.5,
             a_dec: 3.0,
@@ -392,7 +389,7 @@ class Truck extends MovingObject
             v_max_lo: MovingObject.kmh2ms(60),
             v_max_hi: MovingObject.kmh2ms(95),
             v_diff: MovingObject.kmh2ms(5),
-            t_vis: 10,
+            t_vis: 27,
             t_min: 4,
             a_acc: 0.5,
             a_dec: 1.0,
@@ -444,7 +441,7 @@ class BlockingCar extends MovingObject
             v_max_lo: MovingObject.kmh2ms(100),
             v_max_hi: MovingObject.kmh2ms(130),
             v_diff: MovingObject.kmh2ms(5),
-            t_vis: 10,
+            t_vis: 13,
             t_min: 2,
             a_acc: 1.5,
             a_dec: 3,
@@ -483,7 +480,7 @@ class AggressiveCar extends MovingObject
             v_max_lo: MovingObject.kmh2ms(150),
             v_max_hi: MovingObject.kmh2ms(200),
             v_diff: MovingObject.kmh2ms(5),
-            t_vis: 10,
+            t_vis: 16,
             t_min: 2,
             a_acc: 1.8,
             a_dec: 3.6,
