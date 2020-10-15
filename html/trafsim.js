@@ -37,8 +37,13 @@ function is_null(a)
  */
 class SRandom
 {
+   //! seed of PRNG
    static seed = 1;
 
+
+   /*! Generate a pseudo-random number.
+    * @return Returns number x, 0.0 <= x < 1.0
+    */
    static rand()
    {
       if (USE_MATH_RANDOM)
@@ -46,6 +51,16 @@ class SRandom
 
       var x = Math.sin(SRandom.seed++) * 10000;
       return x - Math.floor(x);
+   }
+
+
+   /*! Generate random event with probability p.
+    * @param p Probability of event, p should be 0.0 <= p < 1.0.
+    * @return Returns true with a probability of p, otherwise false.
+    */
+   static rand_ev(p)
+   {
+      return SRandom.rand() < p;
    }
 }
 
