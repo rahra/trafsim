@@ -206,7 +206,7 @@ class Lane
       var node;
 
       for (node = this.last.prev; node.data != null; node = node.prev)
-         if (node.data.d_pos - node.data.d_len > d_pos)
+         if (node.data.d_pos > d_pos)
             break;
 
       return node;

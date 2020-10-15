@@ -44,8 +44,6 @@ class MovingObject
       this.t_init = 0;
       //! name/type of this mobj
       this.name = "MovingObject";
-      //! length of mobj
-      this.len = 0.0;
 
       //! backup data
       this.old = {v_cur: this.v_cur, d_pos: this.d_pos, prev: null, next: null};
@@ -80,7 +78,7 @@ class MovingObject
     */
    get d_vis()
    {
-		return Math.max(this.v_cur * this.t_vis, MOBJ_D_MIN);
+		return this.v_cur * this.t_vis;
    }
 
 
@@ -200,7 +198,7 @@ class MovingObject
       var prev = this.node.prev.data;
 
 		// if there is no mobj ahead or the prev mobj is too far ahead
-      if (prev == null || this.d_pos < prev.d_pos - prev.len - this.d_vis)
+      if (prev == null || this.d_pos < prev.d_pos - this.d_vis)
       {
          // change lane to the right if possible
          if (SRandom.rand_ev(this.p_right) && this.change_right())
@@ -217,7 +215,7 @@ class MovingObject
                continue;
 
             // check if object is within minimum distance
-            if (!node.data.crash && node.data.d_pos - node.data.len < this.d_pos + this.d_min && !SRandom.rand_ev(this.p_pass_right))
+            if (!node.data.crash && node.data.d_pos < this.d_pos + this.d_min && !SRandom.rand_ev(this.p_pass_right))
             {
                // and decelerate in case
                this.decelerate(node.data.v_cur);
@@ -231,11 +229,11 @@ class MovingObject
       }
 
 		// detect crash and immediately stop
-		if (this.d_pos >= prev.d_pos - prev.len)
+		if (this.d_pos >= prev.d_pos)
 		{
 			console.log(this + " crashed into " + prev);
 			this.crash = prev.crash = 1;
-         this.d_pos = prev.d_pos - prev.len;
+         this.d_pos = prev.d_pos;
          this.v_cur = prev.v_cur;
          if (this.a_dec > prev.a_dec)
             this.a_dec = prev.a_dec;
@@ -244,7 +242,7 @@ class MovingObject
 		}
 
 		// if minimum distance is not maintained
-		if (this.d_pos > prev.d_pos - prev.len - this.d_min)
+		if (this.d_pos > prev.d_pos - this.d_min)
 		{
          // if possible change lane to the left
          if ((prev.crash || SRandom.rand_ev(this.p_pass_left)) && this.change_left())
@@ -258,13 +256,13 @@ class MovingObject
          this.decelerate(prev.v_cur - this.v_diff);
 		}
 		// if prev mobj is within visibility
-		else if (this.d_pos > prev.d_pos - prev.len - this.d_vis)
+		else if (this.d_pos > prev.d_pos - this.d_vis)
 		{
-         if ((/*prev.crash ||*/ SRandom.rand_ev(this.p_pass_left)) && this.change_left())
+         if ((prev.crash || SRandom.rand_ev(this.p_pass_left)) && this.change_left())
             return MOBJ_ACT.LEFT;
 
          // or if possible change lane to the right
-         if ((/*prev.crash ||*/ SRandom.rand_ev(this.p_pass_right)) && this.change_right())
+         if ((prev.crash || SRandom.rand_ev(this.p_pass_right)) && this.change_right())
             return MOBJ_ACT.RIGHT;
 
 			// if approach speed difference is higher than valid, decelerate
@@ -301,7 +299,7 @@ class MovingObject
       if (dst == null)
          return 0;
 
-      // get object ahead on the left lane FIXME: not sure here...
+      // get object ahead on the left lane
       var node = dst.ahead_of(this.d_pos + this.d_vis);
 
       // check if minimun distance of mobj behind on dst lane is too small
@@ -353,10 +351,7 @@ class MovingObject
       this.a_acc = idata.a_acc;
       this.a_dec = idata.a_dec;
 
-      this.len = idata.len;
-
       this.color = idata.color;
-
    }
 }
 
@@ -376,7 +371,6 @@ class Car extends MovingObject
             t_min: 2,
             a_acc: 1.5,
             a_dec: 3.0,
-            len: 5,
             color: "grey"
          }
       );
@@ -399,7 +393,6 @@ class Truck extends MovingObject
             t_min: 4,
             a_acc: 0.5,
             a_dec: 1.0,
-            len: 20,
             color: "blue"
          }
       );
@@ -430,7 +423,6 @@ class Bike extends MovingObject
             t_min: 2,
             a_acc: 3.0,
             a_dec: 5.0,
-            len: 2,
             color: "green"
          }
       );
@@ -453,7 +445,6 @@ class BlockingCar extends MovingObject
             t_min: 2,
             a_acc: 1.5,
             a_dec: 3,
-            len: 5,
             color: "red"
          }
       );
@@ -493,7 +484,6 @@ class AggressiveCar extends MovingObject
             t_min: 2,
             a_acc: 1.8,
             a_dec: 3.6,
-            len: 5,
             color: "#FF00FF"
          }
       );
