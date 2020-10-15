@@ -177,18 +177,27 @@ class Lane
 
    recalc(t_cur)
    {
+      //! max number of iterations to prevent endless loop
+      const MAX_LOOP = 10;
+
       this.integrity();
       // loop as long as no lane change appeared (because of changes in the linked list)
-      for (var chg = 1; chg;)
+      for (var node = this.first.next, i = 0; node.data != null && i < MAX_LOOP; i++)
       {
          // loop over all elements in the list
-         for (var node = this.first.next; node.data != null; node = node.next)
+         for (; node.data != null; node = node.next)
          {
-            // restart loop in case of a lane change
-            if ((chg = node.data.recalc(t_cur)))
+            // restart outer loop in case of a lane change
+            if (node.data.recalc(t_cur))
+            {
+               node = this.first.next;
                break;
+            }
          }
       }
+
+      if (i >= MAX_LOOP)
+         console.log("probably endless loop in recalc()");
    }
 
 
@@ -396,7 +405,6 @@ class TrafSim
 
    key_down_handler(e)
    {
-      console.log(e.key);
       switch (e.key)
       {
          case ' ':
