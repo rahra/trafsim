@@ -377,9 +377,7 @@ class TrafSim
             var div = this.avg_cnt < MAX_AVG_CNT ? this.avg_cnt : MAX_AVG_CNT;
             this.avg_speed = (this.avg_speed * div + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (div + 1);
             this.avg_cnt++;
-            this.mobj_cnt--;
-        }
-
+         }
 
          // fill in new mobjs on 1st lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
          if ((!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && SRandom.rand_ev(P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
@@ -399,6 +397,7 @@ class TrafSim
          this.crash_cnt += this.lanes[i].recalc(this.cur_frame);
       }
 
+      // stop simulation if there is a specific amount of simulation frames
       if (MAX_FRAMES && this.cur_frame >= MAX_FRAMES)
          window.clearInterval(this.timer);
    }
