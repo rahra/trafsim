@@ -205,17 +205,21 @@ class MovingObject
          if (SRandom.rand_ev(this.p_right) && this.change_right())
             return 1;
 
-         // if mobj is not willing to pass right, check if there is a mobj ahead on the left
-         if (!SRandom.rand_ev(this.p_pass_right) && this.lane.left != null)
+         // if mobj is not willing to pass right
+         if (!SRandom.rand_ev(this.p_pass_right))
          {
-            // get object ahead on the left lane
-            var node = this.lane.left.ahead_of(this.d_pos);
-            // check if object is within minimum distance
-            if (node.data != null && node.data.d_pos < this.d_pos + this.d_min)
+            // loop over all lanes on the left
+            for (var lane = this.lane.left; lane != null; lane = lane.left)
             {
-               // and decelerate in case
-               this.decelerate(node.data.v_cur);
-               return 0;
+               // get object ahead on the left lane
+               var node = lane.ahead_of(this.d_pos);
+               // check if object is within minimum distance
+               if (node.data != null && node.data.d_pos < this.d_pos + this.d_min)
+               {
+                  // and decelerate in case
+                  this.decelerate(node.data.v_cur);
+                  return 0;
+               }
             }
          }
 
