@@ -1,8 +1,11 @@
 
 //! maximum number of mobjs in the game (0 for unlimited)
-const MAX_MOBJS = 100;
+const MAX_MOBJS = 0;
 //! new mobjs do not enter befor MIN_ENTRY_POS meters
-const MIN_ENTRY_POS = 500;
+const MIN_ENTRY_POS = 300;
+/*! Probability that a new mobj fills in if MIN_ENTRY_POS is ok. This controls
+ * the traffic density. */
+const P_FILL_IN = 0.05;
 //! maximum frames to calculate (0 for unlimited)
 const MAX_FRAMES = 0;
 //! use Math.random() as PRNG
@@ -10,13 +13,14 @@ const USE_MATH_RANDOM = 0;
 //! mobj failure probability
 const MOBJ_FAIL = 0.0;
 //! number of lanes
-const NUM_LANES = 2;
+const NUM_LANES = 3;
 //! distribution of mobj types
 const MOBJ_TYPES = [
-   {type: "car", p: 0.4},
+   {type: "car", p: 0.35},
    {type: "truck", p: 0.3},
    {type: "bike", p: 0.01},
    {type: "blocking", p: 0.29},
+   {type: "aggressive", p: 0.05},
 ];
 
 
@@ -354,7 +358,7 @@ class TrafSim
 
 
          // fill in new mobjs on 1st lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
-         if ((!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
+         if ((!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && SRandom.rand_ev(P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
          {
             // create and init new mobj and list node
             var node = this.gen_mobj();

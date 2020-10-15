@@ -354,7 +354,7 @@ class MovingObject
 }
 
 
-class RandomCar extends MovingObject
+class Car extends MovingObject
 {
    constructor(node = null)
    {
@@ -376,7 +376,7 @@ class RandomCar extends MovingObject
 }
 
 
-class RandomTruck extends MovingObject
+class Truck extends MovingObject
 {
    constructor(node = null)
    {
@@ -398,7 +398,7 @@ class RandomTruck extends MovingObject
 }
 
 
-class RandomBike extends MovingObject
+class Bike extends MovingObject
 {
    constructor(node = null)
    {
@@ -455,6 +455,29 @@ class BlockingCar extends MovingObject
 }
 
 
+class AggressiveCar extends MovingObject
+{
+   constructor(node = null)
+   {
+      super(node);
+      this.init(
+         {
+            name: "car",
+            v_max_lo: MovingObject.kmh2ms(150),
+            v_max_hi: MovingObject.kmh2ms(200),
+            v_diff: MovingObject.kmh2ms(5),
+            t_vis: 5,
+            t_min: 2,
+            a_acc: 1.8,
+            a_dec: 3.6,
+            color: "#FF00FF"
+         }
+      );
+      this._p_pass_right = 0.2;
+   }
+}
+
+
 class MObjFactory
 {
    static make(type = "car")
@@ -462,16 +485,18 @@ class MObjFactory
       switch (type)
       {
          case "truck":
-            return new RandomTruck();
+            return new Truck();
          case "bike":
-            return new RandomBike();
+            return new Bike();
          case "blocking":
             return new BlockingCar();
+         case "aggressive":
+            return new AggressiveCar();
          default:
             console.log("*** unknown mobj type: " + type);
             // intenionally there's no break
          case "car":
-            return new RandomCar();
+            return new Car();
       }
    }
 }
