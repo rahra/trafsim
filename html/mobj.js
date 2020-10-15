@@ -42,6 +42,8 @@ class MovingObject
       this.color = "grey";
       //! initial time frame (should be set on creation)
       this.t_init = 0;
+      //! name/type of this mobj
+      this.name = "MovingObject";
 
       //! backup data
       this.old = {v_cur: this.v_cur, d_pos: this.d_pos, prev: null, next: null};
@@ -330,6 +332,25 @@ class MovingObject
    {
       return x * 3.6;
    }
+
+
+   /*! Set simulation data.
+    */
+   init(idata)
+   {
+      this.name = idata.name;
+
+      this.v_max = idata.v_max_lo + (idata.v_max_hi - idata.v_max_lo) * SRandom.rand();
+      this.v_cur = this.v_max - (idata.v_max_hi - idata.v_max_lo) * SRandom.rand();
+      this.v_diff = MovingObject.kmh2ms(idata.v_diff);
+
+      this.t_vis = idata.t_vis;
+      this.t_min = idata.t_min;
+      this.a_acc = idata.a_acc;
+      this.a_dec = idata.a_dec;
+
+      this.color = idata.color;
+   }
 }
 
 
@@ -338,14 +359,19 @@ class RandomCar extends MovingObject
    constructor(node = null)
    {
       super(node);
-      this.v_max = MovingObject.kmh2ms(100) + MovingObject.kmh2ms(50) * SRandom.rand();
-      this.v_cur = this.v_max - MovingObject.kmh2ms(50) * SRandom.rand();
-      this.v_diff = MovingObject.kmh2ms(5);
-
-      this.t_vis = 5.0;
-      this.t_min = 2.0;
-      this.a_acc = this.v_max / 20.0;
-      this.a_dec = this.v_max / 10.0;
+      this.init(
+         {
+            name: "car",
+            v_max_lo: MovingObject.kmh2ms(100),
+            v_max_hi: MovingObject.kmh2ms(150),
+            v_diff: MovingObject.kmh2ms(5),
+            t_vis: 5,
+            t_min: 2,
+            a_acc: 1.5,
+            a_dec: 3.0,
+            color: "grey"
+         }
+      );
    }
 }
 
@@ -355,16 +381,19 @@ class RandomTruck extends MovingObject
    constructor(node = null)
    {
       super(node);
-      this.v_max = MovingObject.kmh2ms(70) + MovingObject.kmh2ms(20) * SRandom.rand();
-      this.v_cur = this.v_max - MovingObject.kmh2ms(20) * SRandom.rand();
-      this.v_diff = MovingObject.kmh2ms(5);
-
-      this.t_vis = 5.0;
-      this.t_min = 2.0;
-      this.a_acc = this.v_max / 40.0;
-      this.a_dec = this.v_max / 20.0;
-
-      this.color = "blue";
+      this.init(
+         {
+            name: "truck",
+            v_max_lo: MovingObject.kmh2ms(60),
+            v_max_hi: MovingObject.kmh2ms(95),
+            v_diff: MovingObject.kmh2ms(5),
+            t_vis: 5,
+            t_min: 4,
+            a_acc: 0.5,
+            a_dec: 1.0,
+            color: "blue"
+         }
+      );
    }
 }
 
@@ -374,16 +403,19 @@ class RandomBike extends MovingObject
    constructor(node = null)
    {
       super(node);
-      this.v_max = MovingObject.kmh2ms(100) + MovingObject.kmh2ms(70) * SRandom.rand();
-      this.v_cur = this.v_max - MovingObject.kmh2ms(70) * SRandom.rand();
-      this.v_diff = MovingObject.kmh2ms(5);
-
-      this.t_vis = 5.0;
-      this.t_min = 2.0;
-      this.a_acc = this.v_max / 10.0;
-      this.a_dec = this.v_max / 5.0;
-
-      this.color = "green";
+      this.init(
+         {
+            name: "bike",
+            v_max_lo: MovingObject.kmh2ms(100),
+            v_max_hi: MovingObject.kmh2ms(170),
+            v_diff: MovingObject.kmh2ms(5),
+            t_vis: 5,
+            t_min: 2,
+            a_acc: 3.0,
+            a_dec: 5.0,
+            color: "green"
+         }
+      );
    }
 }
 
@@ -393,18 +425,19 @@ class BlockingCar extends MovingObject
    constructor(node = null)
    {
       super(node);
-      this.v_max = MovingObject.kmh2ms(100) + MovingObject.kmh2ms(30) * SRandom.rand();
-      this.v_cur = this.v_max - MovingObject.kmh2ms(30) * SRandom.rand();
-      this.v_diff = MovingObject.kmh2ms(5);
-
-      this.t_vis = 5.0;
-      this.t_min = 2.0;
-      this.a_acc = this.v_max / 20.0;
-      this.a_dec = this.v_max / 10.0;
-
-      //this.p_right = 0.05;
-
-      this.color = "red";
+      this.init(
+         {
+            name: "blocking",
+            v_max_lo: MovingObject.kmh2ms(100),
+            v_max_hi: MovingObject.kmh2ms(130),
+            v_diff: MovingObject.kmh2ms(5),
+            t_vis: 5,
+            t_min: 2,
+            a_acc: 1.5,
+            a_dec: 3,
+            color: "red"
+         }
+      );
    }
 
 
