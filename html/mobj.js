@@ -202,11 +202,11 @@ class MovingObject
       if (prev == null || this.d_pos < prev.d_pos - this.d_vis)
       {
          // change lane to the right if possible
-         if (this.change_right())
+         if (SRandom.rand_ev(this.p_right) && this.change_right())
             return 1;
 
-         // avoid passing right if enabled: check if there is lane on the left
-         if (!PASS_RIGHT && this.lane.left != null)
+         // if mobj is not willing to pass right, check if there is a mobj ahead on the left
+         if (!SRandom.rand_ev(this.p_pass_right) && this.lane.left != null)
          {
             // get object ahead on the left lane
             var node = this.lane.left.ahead_of(this.d_pos);
@@ -240,8 +240,12 @@ class MovingObject
 		// if minimum distance is not maintained
 		if (this.d_pos > prev.d_pos - this.d_min)
 		{
-         // if possible change lane
-         if (this.change_left())
+         // if possible change lane to the left
+         if (SRandom.rand_ev(this.p_pass_left) && this.change_left())
+            return 1;
+
+         // or if possible change lane to the right
+         if (SRandom.rand_ev(this.p_pass_right) && this.change_right())
             return 1;
 
          // otherwise decelerate
@@ -250,7 +254,7 @@ class MovingObject
 		// if prev mobj is within visibility
 		else if (this.d_pos > prev.d_pos - this.d_vis)
 		{
-         if (this.change_left())
+         if (SRandom.rand_ev(this.p_pass_left) && this.change_left())
             return 1;
 
 			// if approach speed difference is higher than valid, decelerate
@@ -281,14 +285,10 @@ class MovingObject
     * @param p Probability one is intending to change the lane.
     * @return Returns 1 of lane was changed, otherwise 0.
     */
-   change_lane(dst, p)
+   change_lane(dst)
    {
       // safety check
       if (dst == null)
-         return 0;
-
-      // check lane change probability
-      if (SRandom.rand_ev(1.0 - p))
          return 0;
 
       // get object ahead on the left lane
@@ -306,13 +306,13 @@ class MovingObject
 
    change_right()
    {
-      return this.change_lane(this.lane.right, this.p_right);
+      return this.change_lane(this.lane.right);
    }
 
 
    change_left()
    {
-      return this.change_lane(this.lane.left, this.p_pass_left);
+      return this.change_lane(this.lane.left);
    }
 
 

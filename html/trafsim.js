@@ -11,8 +11,6 @@ const USE_MATH_RANDOM = 0;
 const MOBJ_FAIL = 0.0;
 //! number of lanes
 const NUM_LANES = 2;
-//! allow to pass on the right lanes
-const PASS_RIGHT = 0;
 //! distribution of mobj types
 const MOBJ_TYPES = [
    {type: "car", p: 0.4},
