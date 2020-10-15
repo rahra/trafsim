@@ -63,6 +63,29 @@ class SRandom
 }
 
 
+class FormatTime
+{
+   static pad0(a)
+   {
+      if (a.toString().length == 1)
+         return "0" + a;
+      return a.toString();
+   }
+
+
+   static hms(t)
+   {
+      var h, m, s;
+
+      h = Math.floor(t / 3600.0);
+      m = Math.floor(t / 60.0) % 60;
+      s = t % 60;
+
+      return FormatTime.pad0(h) + ":" + FormatTime.pad0(m) + ":" + FormatTime.pad0(s);
+   }
+}
+
+
 class DListNode
 {
    constructor(data = null)
@@ -269,7 +292,7 @@ class TrafSim
    scaling()
    {
       this.canvas.width = document.body.clientWidth;
-      this.canvas.height = window.innerHeight;
+      this.canvas.height = 250; //window.innerHeight;
 
       this.sx = this.canvas.width / (this.d_max - this.d_min);
       //this.sy = this.canvas.height / 100;
@@ -312,6 +335,9 @@ class TrafSim
 
       // increase frame counter
       this.cur_frame++;
+      document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame);
+      document.getElementById("avg_speed").textContent = this.avg_speed.toFixed(1);
+      document.getElementById("tput").textContent = (this.avg_cnt / this.cur_frame * 3600).toFixed(1);
 
       for (var i = 0; i < this.lanes.length; i++)
       {
@@ -320,10 +346,11 @@ class TrafSim
          {
             node.unlink();
             //console.log("removed " + node.data + ", type = " + node.data.constructor.name + ", time = " + (this.cur_frame - node.data.t_init) + ", avg_speed = " + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init)));
-            this.avg_speed = (this.avg_speed * this.avg_cnt + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (this.avg_cnt + 1);
+            const MAX_AVG_CNT = 1000;
+            var div = this.avg_cnt < MAX_AVG_CNT ? this.avg_cnt : MAX_AVG_CNT;
+            this.avg_speed = (this.avg_speed * div + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (div + 1);
             this.avg_cnt++;
-            console.log("average speed = " + this.avg_speed);
-         }
+        }
 
 
          // fill in new mobjs on 1st lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
@@ -425,8 +452,6 @@ class TrafSim
 
 
 var canvas = document.getElementById('raceplane');
-canvas.width = document.body.clientWidth;
-canvas.height = window.innerHeight;
 
 console.log("===== NEW RUN =====");
 
