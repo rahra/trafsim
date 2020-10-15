@@ -379,8 +379,8 @@ class TrafSim
             this.avg_cnt++;
          }
 
-         // fill in new mobjs on 1st lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
-         if ((!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && SRandom.rand_ev(P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
+         // fill in new mobjs on 1st and 2nd lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
+         if ((i <= 1) && (!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && SRandom.rand_ev(P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
          {
             // create and init new mobj and list node
             var node = this.gen_mobj();
