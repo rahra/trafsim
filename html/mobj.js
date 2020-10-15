@@ -1,6 +1,8 @@
 class MovingObject
 {
+   //! static mobj counter, each mobj gets a unique id
    static id_cnt = 0;
+
 
    constructor(node = null)
    {
@@ -30,8 +32,10 @@ class MovingObject
       this.lane = null;
       //! frame of current state
       this.t_cur = 0;
-      //! probabilty one would pass left
-      this._p_pass = 1.0;
+      //! probability one would pass left
+      this._p_pass_left = 1.0;
+      //! probability one would pass right
+      this._p_pass_right = 0.0;
       //! probabilty one would change back to the right lanes
       this._p_right = 1.0;
       //! display color
@@ -44,9 +48,15 @@ class MovingObject
    }
 
 
-   get p_pass()
+   get p_pass_right()
    {
-      return this._p_pass;
+      return this._p_pass_right;
+   }
+
+
+   get p_pass_left()
+   {
+      return this._p_pass_left;
    }
 
 
@@ -168,7 +178,7 @@ class MovingObject
       this.save();
       this.t_cur = t_cur;
 
-      if (SRandom.rand() < MOBJ_FAIL)
+      if (SRandom.rand_ev(MOBJ_FAIL))
       {
          console.log(this.id + " fails");
          this.crash = 1;
@@ -192,7 +202,7 @@ class MovingObject
       if (prev == null || this.d_pos < prev.d_pos - this.d_vis)
       {
          // change lane to the right if possible
-         if (this.change_back())
+         if (this.change_right())
             return 1;
 
          // avoid passing right if enabled: check if there is lane on the left
@@ -231,7 +241,7 @@ class MovingObject
 		if (this.d_pos > prev.d_pos - this.d_min)
 		{
          // if possible change lane
-         if (this.pass())
+         if (this.change_left())
             return 1;
 
          // otherwise decelerate
@@ -240,7 +250,7 @@ class MovingObject
 		// if prev mobj is within visibility
 		else if (this.d_pos > prev.d_pos - this.d_vis)
 		{
-         if (this.pass())
+         if (this.change_left())
             return 1;
 
 			// if approach speed difference is higher than valid, decelerate
@@ -268,6 +278,7 @@ class MovingObject
 
    /*! Check if lane change to dst lane ist possible and execute change in case.
     * @param dst Destination lane.
+    * @param p Probability one is intending to change the lane.
     * @return Returns 1 of lane was changed, otherwise 0.
     */
    change_lane(dst, p)
@@ -277,7 +288,7 @@ class MovingObject
          return 0;
 
       // check lane change probability
-      if (SRandom.rand() > p)
+      if (SRandom.rand_ev(1.0 - p))
          return 0;
 
       // get object ahead on the left lane
@@ -293,15 +304,15 @@ class MovingObject
    }
 
 
-   change_back()
+   change_right()
    {
       return this.change_lane(this.lane.right, this.p_right);
    }
 
 
-   pass()
+   change_left()
    {
-      return this.change_lane(this.lane.left, this.p_pass);
+      return this.change_lane(this.lane.left, this.p_pass_left);
    }
 
 
