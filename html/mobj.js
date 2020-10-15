@@ -86,7 +86,7 @@ class MovingObject
     */
    get d_min()
    {
-		return this.v_cur * this.t_min;
+		return Math.max(this.v_cur * this.t_min, MOBJ_D_MIN);
    }
 
 
@@ -151,7 +151,7 @@ class MovingObject
          console.log(diff + " > dec " + this.a_dec);
       if (diff < 0 && -diff > (this.a_acc + 0.1))
          console.log(-diff + " > acc " + this.a_acc);
-      if (this.old.d_pos >= this.d_pos && this.d_pos != 0)
+      if (!this.crash && this.old.d_pos >= this.d_pos && this.d_pos != 0)
          console.log("moving error: " + this.old.d_pos + " >= " + this.d_pos);
       if (this.t_cur && t_cur - this.t_cur > 1)
          console.log("timeskip: t_cur = " + t_cur + ", this.t_cur = " + this.t_cur);
@@ -173,13 +173,14 @@ class MovingObject
 	{
       // check if current frame already calculated
       if (this.t_cur >= t_cur)
-         return 0;
+         return MOBJ_ACT.NONE;
 
       //console.log(this.log_data());
       this.integrity(t_cur);
       this.save();
       this.t_cur = t_cur;
 
+      // check for random mobj failure
       if (SRandom.rand_ev(MOBJ_FAIL))
       {
          console.log(this.id + " fails");
@@ -191,7 +192,7 @@ class MovingObject
       {
          if (this.v_cur > 0)
             this.decelerate(0);
-			return 0;
+			return MOBJ_ACT.DEC;
       }
 
 		// and move ahead
@@ -205,7 +206,7 @@ class MovingObject
       {
          // change lane to the right if possible
          if (SRandom.rand_ev(this.p_right) && this.change_right())
-            return 1;
+            return MOBJ_ACT.RIGHT;
 
          // if mobj is not willing to pass right
          if (!SRandom.rand_ev(this.p_pass_right))
@@ -220,14 +221,14 @@ class MovingObject
                {
                   // and decelerate in case
                   this.decelerate(node.data.v_cur);
-                  return 0;
+                  return MOBJ_ACT.DEC;
                }
             }
          }
 
          // otherwise speedup
          this.accelerate(this.v_max);
-			return 0;
+			return MOBJ_ACT.ACC;
       }
 
 		// detect crash and immediately stop
@@ -240,7 +241,7 @@ class MovingObject
          if (this.a_dec > prev.a_dec)
             this.a_dec = prev.a_dec;
          this.decelerate(0);
-         return 0;
+         return MOBJ_ACT.CRASH;
 		}
 
 		// if minimum distance is not maintained
@@ -248,11 +249,11 @@ class MovingObject
 		{
          // if possible change lane to the left
          if (SRandom.rand_ev(this.p_pass_left) && this.change_left())
-            return 1;
+            return MOBJ_ACT.LEFT;
 
          // or if possible change lane to the right
          if (SRandom.rand_ev(this.p_pass_right) && this.change_right())
-            return 1;
+            return MOBJ_ACT.RIGHT;
 
          // otherwise decelerate
          this.decelerate(prev.v_cur - this.v_diff);
@@ -261,14 +262,18 @@ class MovingObject
 		else if (this.d_pos > prev.d_pos - this.d_vis)
 		{
          if (SRandom.rand_ev(this.p_pass_left) && this.change_left())
-            return 1;
+            return MOBJ_ACT.LEFT;
+
+         // or if possible change lane to the right
+         if (SRandom.rand_ev(this.p_pass_right) && this.change_right())
+            return MOBJ_ACT.RIGHT;
 
 			// if approach speed difference is higher than valid, decelerate
          if (this.v_cur - prev.v_cur > this.v_diff)
 				this.decelerate(prev.v_cur + this.v_diff);
 		}
 
-      return 0;
+      return MOBJ_ACT.DEC;
 	}
 
 
@@ -365,7 +370,7 @@ class Car extends MovingObject
             v_max_lo: MovingObject.kmh2ms(100),
             v_max_hi: MovingObject.kmh2ms(150),
             v_diff: MovingObject.kmh2ms(5),
-            t_vis: 5,
+            t_vis: 10,
             t_min: 2,
             a_acc: 1.5,
             a_dec: 3.0,
@@ -387,7 +392,7 @@ class Truck extends MovingObject
             v_max_lo: MovingObject.kmh2ms(60),
             v_max_hi: MovingObject.kmh2ms(95),
             v_diff: MovingObject.kmh2ms(5),
-            t_vis: 5,
+            t_vis: 10,
             t_min: 4,
             a_acc: 0.5,
             a_dec: 1.0,
@@ -409,7 +414,7 @@ class Bike extends MovingObject
             v_max_lo: MovingObject.kmh2ms(100),
             v_max_hi: MovingObject.kmh2ms(170),
             v_diff: MovingObject.kmh2ms(5),
-            t_vis: 5,
+            t_vis: 10,
             t_min: 2,
             a_acc: 3.0,
             a_dec: 5.0,
@@ -431,7 +436,7 @@ class BlockingCar extends MovingObject
             v_max_lo: MovingObject.kmh2ms(100),
             v_max_hi: MovingObject.kmh2ms(130),
             v_diff: MovingObject.kmh2ms(5),
-            t_vis: 5,
+            t_vis: 10,
             t_min: 2,
             a_acc: 1.5,
             a_dec: 3,
@@ -466,7 +471,7 @@ class AggressiveCar extends MovingObject
             v_max_lo: MovingObject.kmh2ms(150),
             v_max_hi: MovingObject.kmh2ms(200),
             v_diff: MovingObject.kmh2ms(5),
-            t_vis: 5,
+            t_vis: 10,
             t_min: 2,
             a_acc: 1.8,
             a_dec: 3.6,

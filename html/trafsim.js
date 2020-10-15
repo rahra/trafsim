@@ -5,13 +5,17 @@ const MAX_MOBJS = 0;
 const MIN_ENTRY_POS = 300;
 /*! Probability that a new mobj fills in if MIN_ENTRY_POS is ok. This controls
  * the traffic density. */
-const P_FILL_IN = 0.05;
+const P_FILL_IN = 1.0;
 //! maximum frames to calculate (0 for unlimited)
 const MAX_FRAMES = 0;
 //! use Math.random() as PRNG
 const USE_MATH_RANDOM = 0;
 //! mobj failure probability
 const MOBJ_FAIL = 0.0;
+//! absolute minimum distance
+const MOBJ_D_MIN = 10;
+//! course distance
+const DISTANCE = 25000;
 //! number of lanes
 const NUM_LANES = 3;
 //! distribution of mobj types
@@ -22,6 +26,15 @@ const MOBJ_TYPES = [
    {type: "blocking", p: 0.29},
    {type: "aggressive", p: 0.05},
 ];
+//! mobj actions
+const MOBJ_ACT = {
+   NONE: 0,
+   CRASH: 1,
+   ACC: 2,
+   DEC: 3,
+   LEFT: 4,
+   RIGHT: 5
+};
 
 
 function is_null(a)
@@ -213,7 +226,8 @@ class Lane
          for (; node.data != null; node = node.next)
          {
             // restart outer loop in case of a lane change
-            if (node.data.recalc(t_cur))
+            var act = node.data.recalc(t_cur);
+            if (act == MOBJ_ACT.LEFT || act == MOBJ_ACT.RIGHT)
             {
                node = this.first.next;
                break;
@@ -246,7 +260,7 @@ class Lane
 
 class TrafSim
 {
-   constructor(canvas, rlen = 25000)
+   constructor(canvas, rlen = DISTANCE)
    {
       this.canvas = canvas;
 
@@ -261,6 +275,7 @@ class TrafSim
       this.sy = 1;
 
       this.d_max = rlen;
+      document.getElementById("dist").textContent = (this.d_max / 1000).toFixed(1);
       this.d_min = 0;
 
       this.mobj_cnt = 0;
@@ -296,7 +311,7 @@ class TrafSim
    scaling()
    {
       this.canvas.width = document.body.clientWidth;
-      this.canvas.height = 250; //window.innerHeight;
+      this.canvas.height = 300; //window.innerHeight;
 
       this.sx = this.canvas.width / (this.d_max - this.d_min);
       //this.sy = this.canvas.height / 100;
