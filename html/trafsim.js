@@ -409,6 +409,10 @@ class TrafSim
    draw()
    {
       this.ctx.clearRect(0, 0, this.canvas.width, 100);
+      this.ctx.beginPath();
+      this.ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
+      this.ctx.rect(0, 100, this.canvas.width, 200);
+      this.ctx.fill();
 
       //this.ctx.save();
       this.ctx.lineWidth = 1;
