@@ -1,11 +1,13 @@
 
+//! simulation frames per redraw
+const SIM_FPD = 1;
 //! maximum number of mobjs in the game (0 for unlimited)
 const MAX_MOBJS = 0;
 //! new mobjs do not enter befor MIN_ENTRY_POS meters
 const MIN_ENTRY_POS = 300;
 /*! Probability that a new mobj fills in if MIN_ENTRY_POS is ok. This controls
  * the traffic density. */
-const P_FILL_IN = 1.0;
+const P_FILL_IN = 0.3;
 //! maximum frames to calculate (0 for unlimited)
 const MAX_FRAMES = 0;
 //! use Math.random() as PRNG
@@ -382,19 +384,20 @@ class TrafSim
          return;
       }
 
-      // increase frame counter
-      this.cur_frame++;
-      for (var i = 0; i < this.lanes.length; i++)
+      for (var j = 0; j < SIM_FPD; j++, this.cur_frame++)
       {
-         // remove mobjs which are out of scope of the lane
-         for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; node = node.next, this.mobj_cnt--)
-            this.delete_mobj_node(node);
+         for (var i = 0; i < this.lanes.length; i++)
+         {
+            // remove mobjs which are out of scope of the lane
+            for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; node = node.next, this.mobj_cnt--)
+               this.delete_mobj_node(node);
 
-         // fill in new mobjs on 1st and 2nd lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
-         if ((i <= 1) && (!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && SRandom.rand_ev(P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
-            this.new_mobj_node(this.lanes[i]);
+            // fill in new mobjs on 1st and 2nd lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
+            if ((i <= 1) && (!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && SRandom.rand_ev(P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
+               this.new_mobj_node(this.lanes[i]);
 
-         this.crash_cnt += this.lanes[i].recalc(this.cur_frame);
+            this.crash_cnt += this.lanes[i].recalc(this.cur_frame);
+         }
       }
 
       // stop simulation if there is a specific amount of simulation frames
