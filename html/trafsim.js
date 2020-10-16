@@ -339,13 +339,37 @@ class TrafSim
    }
 
 
-   gen_mobj()
+   /*! Create a new random mobj and add it to the lane.
+    */
+   new_mobj_node(lane)
    {
-      return new DListNode(MObjFactory.make(this.random_mobj_type()));
+      // create and init new mobj and list node
+      var node = new DListNode(MObjFactory.make(this.random_mobj_type()));
+      node.data.node = node;
+      node.data.lane = lane;
+      node.data.t_init = this.cur_frame;
+      node.data.save();
+
+      // and append it to the lane and increase mobj counter
+      lane.last.insert(node);
+      this.mobj_cnt++;
    }
 
 
-   /*! Calculate next time frame of simulation.
+   /*! Completely remove mobj and its list node from the game.
+    */
+   delete_mobj_node(node)
+   {
+      const MAX_AVG_CNT = 1000;
+      var div = this.avg_cnt < MAX_AVG_CNT ? this.avg_cnt : MAX_AVG_CNT;
+      node.unlink();
+      this.avg_speed = (this.avg_speed * div + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (div + 1);
+      this.avg_cnt++;
+   }
+
+
+   /*! This is the main simulation loop. It calculates next time frame of
+    * simulation.
     */
    next_frame()
    {
@@ -360,39 +384,15 @@ class TrafSim
 
       // increase frame counter
       this.cur_frame++;
-      document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame);
-      document.getElementById("avg_speed").textContent = this.avg_speed.toFixed(1);
-      document.getElementById("tput").textContent = (this.avg_cnt / this.cur_frame * 3600).toFixed(1);
-      document.getElementById("mobj_cnt").textContent = this.mobj_cnt;
-      document.getElementById("crash_cnt").textContent = this.crash_cnt;
-
       for (var i = 0; i < this.lanes.length; i++)
       {
          // remove mobjs which are out of scope of the lane
          for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; node = node.next, this.mobj_cnt--)
-         {
-            node.unlink();
-            //console.log("removed " + node.data + ", type = " + node.data.constructor.name + ", time = " + (this.cur_frame - node.data.t_init) + ", avg_speed = " + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init)));
-            const MAX_AVG_CNT = 1000;
-            var div = this.avg_cnt < MAX_AVG_CNT ? this.avg_cnt : MAX_AVG_CNT;
-            this.avg_speed = (this.avg_speed * div + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (div + 1);
-            this.avg_cnt++;
-         }
+            this.delete_mobj_node(node);
 
          // fill in new mobjs on 1st and 2nd lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
          if ((i <= 1) && (!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && SRandom.rand_ev(P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
-         {
-            // create and init new mobj and list node
-            var node = this.gen_mobj();
-            node.data.node = node;
-            node.data.lane = this.lanes[i];
-            node.data.t_init = this.cur_frame;
-            node.data.save();
-            this.mobj_cnt++;
-
-            // and append it to the lane
-            this.lanes[i].last.insert(node);
-         }
+            this.new_mobj_node(this.lanes[i]);
 
          this.crash_cnt += this.lanes[i].recalc(this.cur_frame);
       }
@@ -407,13 +407,18 @@ class TrafSim
     */
    draw()
    {
+      document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame);
+      document.getElementById("avg_speed").textContent = this.avg_speed.toFixed(1);
+      document.getElementById("tput").textContent = (this.avg_cnt / this.cur_frame * 3600).toFixed(1);
+      document.getElementById("mobj_cnt").textContent = this.mobj_cnt;
+      document.getElementById("crash_cnt").textContent = this.crash_cnt;
+
       this.ctx.clearRect(0, 0, this.canvas.width, 100);
       this.ctx.beginPath();
       this.ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
       this.ctx.rect(0, 100, this.canvas.width, 200);
       this.ctx.fill();
 
-      //this.ctx.save();
       this.ctx.lineWidth = 1;
 
       var p = 3;
@@ -454,8 +459,6 @@ class TrafSim
             }
          }
       }
-
-      //this.ctx.restore();
    }
 
 
