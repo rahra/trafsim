@@ -44,6 +44,8 @@ class MovingObject
       this.t_init = 0;
       //! name/type of this mobj
       this.name = "MovingObject";
+      //! length of mobj
+      this.len = 0;
 
       //! backup data
       this.old = {v_cur: this.v_cur, d_pos: this.d_pos, prev: null, next: null};
@@ -78,7 +80,7 @@ class MovingObject
     */
    get d_vis()
    {
-		return this.v_cur * this.t_vis;
+		return Math.max(this.v_cur * this.t_vis, MOBJ_D_MIN);
    }
 
 
