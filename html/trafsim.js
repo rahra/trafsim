@@ -10,7 +10,7 @@ const P_FILL_IN = 1.0;
 const MAX_FRAMES = 0;
 //! use Math.random() as PRNG
 const USE_MATH_RANDOM = 0;
-//! mobj failure probability
+//! mobj failure probability per hour
 const MOBJ_FAIL = 0.0;
 //! absolute minimum distance
 const MOBJ_D_MIN = 10;
