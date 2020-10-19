@@ -429,28 +429,30 @@ class TrafSim
 
       for (var j = 0; j < this.lanes.length; j++)
       {
-         var i, node, mobj;
+         var i, node, mobj, x, y;
          for (i = 0, node = this.lanes[j].first.next; node.data != null; i++, node = node.next)
          {
             mobj = node.data;
+            x = mobj.d_pos * this.sx;
+            y = 20 + (this.lanes.length - j - 1) * 5;
 
             // draw mobj
             //this.ctx.fillStyle = this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
             this.ctx.fillStyle = this.ctx.strokeStyle = mobj.color;
             this.ctx.beginPath();
-            this.ctx.rect((mobj.d_pos - this.d_min) * this.sx, 20 + (this.lanes.length - j - 1) * 5, p, p);
+            this.ctx.rect(x, y, p, p);
             this.ctx.fill();
 
             // draw visibility range of mobj
             this.ctx.beginPath();
-            this.ctx.moveTo((mobj.d_pos - this.d_min) * this.sx + p, 20 + (this.lanes.length - j - 1) * 5 + p * 0.5);
-            this.ctx.lineTo((mobj.d_pos - this.d_min + mobj.d_vis) * this.sx + p, 20 + (this.lanes.length - j - 1) * 5 + p * 0.5);
+            this.ctx.moveTo(x + p, y + p * 0.5);
+            this.ctx.lineTo(x + mobj.d_vis * this.sx + p, y + p * 0.5);
             this.ctx.stroke();
 
             // draw speed curve
             this.ctx.beginPath();
-            this.ctx.moveTo((mobj.old.d_pos - this.d_min) * this.sx, 300 - mobj.old.v_cur * 3);
-            this.ctx.lineTo((mobj.d_pos - this.d_min) * this.sx, 300 - mobj.v_cur * 3);
+            this.ctx.moveTo(mobj.old.d_pos * this.sx, 300 - mobj.old.v_cur * 3);
+            this.ctx.lineTo(x, 300 - mobj.v_cur * 3);
             this.ctx.stroke();
 
             // draw crash box
@@ -458,7 +460,7 @@ class TrafSim
             {
                this.ctx.strokeStyle = "red";
                this.ctx.beginPath();
-               this.ctx.rect((mobj.d_pos - this.d_min) * this.sx - 1, 20 + (this.lanes.length - j - 1) * 5 - 1, p+2, p+2);
+               this.ctx.rect(x - 1, y - 1, p + 2, p + 2);
                this.ctx.stroke();
             }
          }
