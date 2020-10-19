@@ -92,7 +92,10 @@ class MovingObject
    }
 
 
-   /*! Accelerate, but not more than v_max.
+   /*! Accelerate, but not more than v_max and never more than this.v_max.
+    * @param v_max Maximum speed which shall not be exceeded.
+    * @return The method returns MOBJ_ACT.ACC if it accelerated. If v_max is
+    * already reached, MOBJ_ACT.NONE is returned.
     */
    accelerate(v_max)
    {
@@ -102,7 +105,7 @@ class MovingObject
 
       // check if max speed already reached
       if (this.v_cur >= v_max)
-         return;
+         return MOBJ_ACT.NONE;
 
       // accelerate
       this.v_cur += this.a_acc;
@@ -110,10 +113,16 @@ class MovingObject
       // make sure make speed is not exceeded after acceleration
       if (this.v_cur > v_max)
          this.v_cur = v_max;
+
+      return MOBJ_ACT.ACC;
    }
 
 
-   /*! Decelerate, but not less than v_min.
+   /*! Decelerate, but not less than v_min. The absolute minimum speed is 0.
+    * The method makes sure that the current speed will never be less than 0.
+    * @param v_min Minimum speed to reach.
+    * @return The method returns MOBJ_ACT.DEC if the mobj was decelerated. In
+    * case v_min was already reached before, MOBJ_ACT.NONE is returned.
     */
    decelerate(v_min)
    {
@@ -123,7 +132,7 @@ class MovingObject
 
       // check if speed is already low enough
       if (this.v_cur <= v_min)
-         return;
+         return MOBJ_ACT.NONE;
 
       // decelerate
       this.v_cur += this.a_dec;
@@ -131,6 +140,8 @@ class MovingObject
       // make sure car does not run backwards after deceleration
       if (this.v_cur < v_min)
          this.v_cur = v_min;
+
+      return MOBJ_ACT.DEC;
    }
 
 
@@ -281,14 +292,16 @@ class MovingObject
       if ((prev.crash || SRandom.rand_ev(this.p_pass_right)) && this.change_right())
          return MOBJ_ACT.RIGHT;
 
-		// if minimum distance is not maintained
-      if (this.in_min_dist(prev))
-         this.decelerate(prev.v_cur - this.v_diff);
-		// if prev mobj is within visibility
-      else
-         this.decelerate(prev.v_cur + this.v_diff);
+      // approach speed difference will be negative if prev mobj is within
+      // minimum distance, otherwise if it is in visibility range the approach
+      // speed shall be positive.
+      var d = this.in_min_dist(prev) ? -this.v_diff : this.v_diff;
+      if (this.v_cur > prev.v_cur + d)
+         return this.decelerate(prev.v_cur + d);
+      if (this.v_cur < prev.v_cur + d)
+         return this.accelerate(prev.v_cur + d);
 
-      return MOBJ_ACT.DEC;
+      return MOBJ_ACT.NONE;
 	}
 
 
