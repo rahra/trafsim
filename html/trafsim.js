@@ -349,6 +349,7 @@ class TrafSim
       var node = new DListNode(MObjFactory.make(this.random_mobj_type()));
       node.data.node = node;
       node.data.lane = lane;
+      node.data.d_pos = -MIN_ENTRY_POS;
       node.data.t_init = this.cur_frame;
       node.data.save();
 
@@ -393,7 +394,7 @@ class TrafSim
                this.delete_mobj_node(node);
 
             // fill in new mobjs on 1st and 2nd lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
-            if ((i <= 1) && (!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && SRandom.rand_ev(P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos > MIN_ENTRY_POS))
+            if ((i <= 1) && (!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && SRandom.rand_ev(P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos >= 0))
                this.new_mobj_node(this.lanes[i]);
 
             this.crash_cnt += this.lanes[i].recalc(this.cur_frame);
