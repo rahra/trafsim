@@ -126,7 +126,7 @@ class MovingObject
          return;
 
       // decelerate
-      this.v_cur -= this.a_dec;
+      this.v_cur += this.a_dec;
 
       // make sure car does not run backwards after deceleration
       if (this.v_cur < v_min)
@@ -150,8 +150,8 @@ class MovingObject
       // integrity checks
       //console.log("id:" + this.id + ",v_cur:" + this.v_cur + ",d_pos:" + this.d_pos + ",t_cur:" + this.t_cur + ",lane:" + this.lane.id + ",crash:" + this.crash + ",");
       var diff = this.old.v_cur - this.v_cur;
-      if (diff > 0 && diff > (this.a_dec + 0.1))
-         console.log(diff + " > dec " + this.a_dec);
+      if (diff > 0 && diff < (this.a_dec - 0.1))
+         console.log(-diff + " < dec " + this.a_dec);
       if (diff < 0 && -diff > (this.a_acc + 0.1))
          console.log(-diff + " > acc " + this.a_acc);
       if (this.old.d_pos > this.d_pos && this.d_pos != 0)
@@ -267,7 +267,7 @@ class MovingObject
 			this.crash = prev.crash = 1;
          this.d_pos = prev.d_pos;
          this.v_cur = prev.v_cur;
-         if (this.a_dec > prev.a_dec)
+         if (this.a_dec < prev.a_dec)
             this.a_dec = prev.a_dec;
          this.decelerate(0);
          return MOBJ_ACT.CRASH;
@@ -396,7 +396,7 @@ class Car extends MovingObject
             t_vis: 14,
             t_min: 2,
             a_acc: 1.5,
-            a_dec: 3.0,
+            a_dec: -3.0,
             len: 5,
             color: "grey"
          }
@@ -419,7 +419,7 @@ class Truck extends MovingObject
             t_vis: 27,
             t_min: 4,
             a_acc: 0.5,
-            a_dec: 1.0,
+            a_dec: -1.0,
             len: 20,
             color: "blue"
          }
@@ -450,7 +450,7 @@ class Bike extends MovingObject
             t_vis: 10,
             t_min: 2,
             a_acc: 3.0,
-            a_dec: 5.0,
+            a_dec: -5.0,
             len: 2,
             color: "green"
          }
@@ -473,7 +473,7 @@ class BlockingCar extends MovingObject
             t_vis: 13,
             t_min: 2,
             a_acc: 1.5,
-            a_dec: 3,
+            a_dec: -3,
             len: 5,
             color: "red"
          }
@@ -513,7 +513,7 @@ class AggressiveCar extends MovingObject
             t_vis: 16,
             t_min: 2,
             a_acc: 1.8,
-            a_dec: 3.6,
+            a_dec: -3.6,
             len: 5,
             color: "#FF00FF"
          }
