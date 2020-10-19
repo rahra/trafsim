@@ -23,9 +23,9 @@ class MovingObject
       //! current position
       this.d_pos = 0.0;
       //! acceleration
-      this.a_acc = 0.0;
+      this._a_acc = 0.0;
       //! deceleration
-      this.a_dec = 0.0;
+      this._a_dec = 0.0;
       //! 1 if crash
       this.crash = 0;
       //! pointer to lane
@@ -89,6 +89,18 @@ class MovingObject
    get d_min()
    {
 		return Math.max(this.v_cur * this.t_min, MOBJ_D_MIN);
+   }
+
+
+   get a_acc()
+   {
+      return this._a_acc / Math.exp(3.0 * this.v_cur / this.v_max )
+   }
+
+
+   get a_dec()
+   {
+      return this._a_dec;
    }
 
 
@@ -385,8 +397,8 @@ class MovingObject
 
       this.t_vis = idata.t_vis;
       this.t_min = idata.t_min;
-      this.a_acc = idata.a_acc;
-      this.a_dec = idata.a_dec;
+      this._a_acc = idata.a_acc;
+      this._a_dec = idata.a_dec;
 
       this.len = idata.len;
 
