@@ -524,11 +524,13 @@ console.log("===== NEW RUN =====");
 
 var ts = new TrafSim(canvas);
 
+for (var i = 0; i < MOBJ_TYPES.length; i++)
+   document.getElementById("desc").innerHTML += MObjFactory.desc(MOBJ_TYPES[i].type) + "<br>\n";
+
 ts.scaling();
 ts.draw();
 
 window.addEventListener('resize', function(e){ts.scaling(); ts.draw();});
 document.addEventListener('keydown', function(e){ts.key_down_handler(e);});
 ts.timer = window.setInterval(function(){ts.draw(); ts.next_frame();}, 40);
-
 

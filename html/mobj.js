@@ -6,6 +6,8 @@ class MovingObject
 
    constructor(node = null)
    {
+      //! description of this mobj
+      this.desc = "Abstract implementation of a generic moving object.";
       //! pointer to list node
       this.node = node;
       //! id
@@ -411,10 +413,11 @@ class Car extends MovingObject
    constructor(node = null)
    {
       super(node);
+      this.desc = "Implementation of a regular car driver. Keeps right, passes left, moderate speed.";
       this.init(
          {
             name: "car",
-            v_max_lo: MovingObject.kmh2ms(100),
+            v_max_lo: MovingObject.kmh2ms(120),
             v_max_hi: MovingObject.kmh2ms(150),
             v_diff: MovingObject.kmh2ms(5),
             t_vis: 14,
@@ -434,6 +437,7 @@ class Truck extends MovingObject
    constructor(node = null)
    {
       super(node);
+      this.desc = "Implementation of a regular truck driver. Keeps right only on the 1st and 2nd lane, passes left, typical truck speed.";
       this.init(
          {
             name: "truck",
@@ -465,6 +469,7 @@ class Bike extends MovingObject
    constructor(node = null)
    {
       super(node);
+      this.desc = "Implementation of a motorcycle. Goes pretty fast, high accelration and deceleration rates.";
       this.init(
          {
             name: "bike",
@@ -488,6 +493,7 @@ class BlockingCar extends MovingObject
    constructor(node = null)
    {
       super(node);
+      this.desc = "Implementation a \"blocking\" car. Lower average speed, keeps on the left and blocks lane, i.e. does go back right only ocassionally.";
       this.init(
          {
             name: "blocking",
@@ -528,6 +534,7 @@ class AggressiveCar extends MovingObject
    constructor(node = null)
    {
       super(node);
+      this.desc = "Agressive car driver. Goes at high speed, and accelerates and decelerates aggressively, occasionally passes right.";
       this.init(
          {
             name: "car",
@@ -567,6 +574,13 @@ class MObjFactory
          case "car":
             return new Car();
       }
+   }
+
+
+   static desc(type)
+   {
+      var mobj = MObjFactory.make(type);
+      return "Color: " + mobj.color + ": " + mobj.desc;
    }
 }
 
