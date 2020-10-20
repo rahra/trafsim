@@ -351,6 +351,7 @@ class TrafSim
       node.data.lane = lane;
       node.data.d_pos = -MIN_ENTRY_POS;
       node.data.t_init = this.cur_frame;
+      node.data.v_cur = MovingObject.kmh2ms(70);
       node.data.save();
 
       // and append it to the lane and increase mobj counter
@@ -407,6 +408,32 @@ class TrafSim
    }
 
 
+   draw_axis()
+   {
+      // draw x-axis of speed curve
+      this.ctx.strokeStyle = "grey";
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, 300 - MovingObject.kmh2ms(210) * 3);
+      this.ctx.lineTo(0, 300);
+      this.ctx.lineTo(this.canvas.width, 300);
+      this.ctx.stroke();
+
+      this.ctx.font = "10pt sans-serif";
+      this.ctx.strokeStyle = "lightgrey";
+      this.ctx.fillStyle = "grey";
+      this.ctx.lineWidth = 0.5;
+      var step = 25;
+      for (var i = step; i <= 200; i += step)
+      {
+         this.ctx.beginPath();
+         this.ctx.moveTo(0, 300 - MovingObject.kmh2ms(i) * 3);
+         this.ctx.lineTo(this.canvas.width, 300 - MovingObject.kmh2ms(i) * 3);
+         this.ctx.stroke();
+         this.ctx.fillText(i, 10, 300 - MovingObject.kmh2ms(i) * 3 + 5);
+      }
+   }
+
+
    /*! Draw all current moving objects.
     */
    draw()
@@ -422,7 +449,7 @@ class TrafSim
       this.ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
       this.ctx.rect(0, 100, this.canvas.width, 200);
       this.ctx.fill();
-
+      this.draw_axis();
       this.ctx.lineWidth = 1;
 
       var p = 3;

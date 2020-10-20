@@ -392,7 +392,6 @@ class MovingObject
       this.name = idata.name;
 
       this.v_max = idata.v_max_lo + (idata.v_max_hi - idata.v_max_lo) * SRandom.rand();
-      this.v_cur = this.v_max - (idata.v_max_hi - idata.v_max_lo) * SRandom.rand();
       this.v_diff = MovingObject.kmh2ms(idata.v_diff);
 
       this.t_vis = idata.t_vis;
