@@ -369,6 +369,7 @@ class TrafSim
       node.unlink();
       this.avg_speed = (this.avg_speed * div + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (div + 1);
       this.avg_cnt++;
+      console.log(FormatTime.hms(node.data.t_slow) + ", " + (100 * node.data.t_slow / (this.cur_frame - node.data.t_init)).toFixed(1) + "%");
    }
 
 
