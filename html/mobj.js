@@ -48,6 +48,12 @@ class MovingObject
       this.name = "MovingObject";
       //! length of mobj
       this.len = 0;
+      //! time not going at max speed
+      this.t_slow = 0;
+      //! time of last lane changes, [0] -> right, [1] -> left
+      this.t_chg = [0, 0];
+      //! minimum time of lane back change
+      this.t_chg_back = 10;
 
       //! backup data
       this.old = {v_cur: this.v_cur, d_pos: this.d_pos, act: MOBJ_ACT.NONE, prev: null, next: null};
@@ -264,18 +270,22 @@ class MovingObject
                continue;
 
             // check if object on the left is within visibilty
-            if (this.in_visibility(node.data))
-            {
-               // and decelerate in case
-               this.decelerate(node.data.v_cur + this.v_diff);
-               return MOBJ_ACT.DEC;
-            }
-
-            // check if object on the left is within visibilty
             if (this.in_min_dist(node.data))
             {
                // and decelerate in case
                this.decelerate(node.data.v_cur - this.v_diff);
+               return MOBJ_ACT.DEC;
+            }
+
+            // check if object on the left is within visibilty
+            if (this.in_visibility(node.data))
+            {
+               // move to the next lane on the left
+               if (SRandom.rand_ev(this.p_pass_left) && this.change_left())
+                  return MOBJ_ACT.LEFT;
+
+               // and decelerate in case
+               this.decelerate(node.data.v_cur + this.v_diff);
                return MOBJ_ACT.DEC;
             }
          }
@@ -305,6 +315,10 @@ class MovingObject
       // or if possible change lane to the right
       if ((prev.crash || SRandom.rand_ev(this.p_pass_right)) && this.change_right())
          return MOBJ_ACT.RIGHT;
+
+      // increase slow timer if not going at max speed
+      if (this.v_cur < this.v_max)
+         this.t_slow++;
 
       // approach speed difference will be negative if prev mobj is within
       // minimum distance, otherwise if it is in visibility range the approach
@@ -344,6 +358,12 @@ class MovingObject
       if (dst == null)
          return 0;
 
+      if (this.lane == dst)
+      {
+         console.log("FATAL: this should never happen");
+         return 0;
+      }
+
       // get object ahead on the left lane
       var node = dst.ahead_of(this.d_pos);
 
@@ -353,6 +373,13 @@ class MovingObject
          // check if minimun distance of mobj behind on dst lane can be mained
          if (node.next.data == null || !node.next.data.in_min_dist(this))
          {
+            // check if enough time elapsed from the last change
+            if (this.t_cur <= this.t_chg[+(dst.id < this.lane.id)] + this.t_chg_back)
+               return 0;
+
+            // save current timestamp
+            this.t_chg[+(dst.id > this.lane.id)] = this.t_cur;
+
             // change lane
             this.relink(node, dst);
             return 1;
