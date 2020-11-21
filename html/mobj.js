@@ -249,8 +249,25 @@ class MovingObject
 		// and move ahead
 		this.d_pos += this.v_cur;
 
+      // increase slow timer if not going at max speed
+      if (this.v_cur < this.v_max * 0.95)
+         this.t_slow++;
+
       // get previous mobject
       var prev = this.node.prev.data;
+
+		// detect crash and immediately stop
+		if (prev != null && this.d_pos >= prev.d_pos)
+		{
+			console.log(this + " crashed into " + prev);
+			this.crash = prev.crash = 1;
+         this.d_pos = prev.d_pos;
+         this.v_cur = prev.v_cur;
+         if (this.a_dec < prev.a_dec)
+            this.a_dec = prev.a_dec;
+         this.decelerate(0);
+         return MOBJ_ACT.CRASH;
+		}
 
 		// if there is no mobj ahead or the prev mobj is too far ahead
       if (prev == null || !this.in_visibility(prev))
@@ -295,19 +312,6 @@ class MovingObject
 			return MOBJ_ACT.ACC;
       }
 
-		// detect crash and immediately stop
-		if (this.d_pos >= prev.d_pos)
-		{
-			console.log(this + " crashed into " + prev);
-			this.crash = prev.crash = 1;
-         this.d_pos = prev.d_pos;
-         this.v_cur = prev.v_cur;
-         if (this.a_dec < prev.a_dec)
-            this.a_dec = prev.a_dec;
-         this.decelerate(0);
-         return MOBJ_ACT.CRASH;
-		}
-
       // if possible change lane to the left
       if ((prev.crash || SRandom.rand_ev(this.p_pass_left)) && this.change_left())
          return MOBJ_ACT.LEFT;
@@ -315,10 +319,6 @@ class MovingObject
       // or if possible change lane to the right
       if ((prev.crash || SRandom.rand_ev(this.p_pass_right)) && this.change_right())
          return MOBJ_ACT.RIGHT;
-
-      // increase slow timer if not going at max speed
-      if (this.v_cur < this.v_max)
-         this.t_slow++;
 
       // approach speed difference will be negative if prev mobj is within
       // minimum distance, otherwise if it is in visibility range the approach
@@ -414,7 +414,7 @@ class MovingObject
    }
 
 
-   /*! Set simulation data.
+   /*! Set simulation parameters.
     */
    init(idata)
    {
@@ -431,6 +431,12 @@ class MovingObject
       this.len = idata.len;
 
       this.color = idata.color;
+   }
+
+
+   sim_data()
+   {
+      return "name=\"" + this.name + "\" v_max=" + MovingObject.ms2kmh(this.v_max).toFixed(1) + " t=" + FormatTime.hms(this.t_cur - this.t_init) + " t_slow=" + FormatTime.hms(this.t_slow) + " t_slowp=" + (100 * this.t_slow / (this.t_cur - this.t_init)).toFixed(1) + "% v_avg=" + MovingObject.ms2kmh(DISTANCE / (this.t_cur - this.t_init)).toFixed(1);
    }
 }
 
