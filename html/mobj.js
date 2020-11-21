@@ -39,7 +39,7 @@ class MovingObject
       //! probability one would pass right
       this._p_pass_right = 0.0;
       //! probabilty one would change back to the right lanes
-      this._p_right = 1.0;
+      this._p_pref_right = 1.0;
       //! display color
       this.color = "grey";
       //! initial time frame (should be set on creation)
@@ -72,9 +72,9 @@ class MovingObject
    }
 
 
-   get p_right()
+   get p_pref_right()
    {
-      return this._p_right;
+      return this._p_pref_right;
    }
 
 
@@ -256,7 +256,7 @@ class MovingObject
       if (prev == null || !this.in_visibility(prev))
       {
          // change lane to the right if possible
-         if (SRandom.rand_ev(this.p_right) && this.change_right())
+         if (SRandom.rand_ev(this.p_pref_right) && this.change_right())
             return MOBJ_ACT.RIGHT;
 
          // loop over all lanes on the left
@@ -269,7 +269,7 @@ class MovingObject
             if (node.data == null || node.data.crash || SRandom.rand_ev(this.p_pass_right))
                continue;
 
-            // check if object on the left is within visibilty
+            // check if object on the left is within minimum distance
             if (this.in_min_dist(node.data))
             {
                // and decelerate in case
@@ -540,7 +540,7 @@ class BlockingCar extends MovingObject
 
    /*! Calculate probability to move back to the right for the blocking car.
     */
-   get p_right()
+   get p_pref_right()
    {
       // higher right probability if it is on the left-most lane
       if (this.lane.left == null)
