@@ -2,7 +2,7 @@
 //! simulation frames per redraw
 const SIM_FPD = 1;
 //! display framerate
-const FPS = 30;
+const FPS = 25;
 //! maximum number of mobjs in the game (0 for unlimited)
 const MAX_MOBJS = 0;
 //! new mobjs do not enter befor MIN_ENTRY_POS meters
