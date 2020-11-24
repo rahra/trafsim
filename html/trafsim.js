@@ -455,9 +455,28 @@ class TrafSim
 
       var p = 3;
 
+      // draw road
+      this.ctx.fillStyle = "lightgrey";
+      this.ctx.rect(0, 20, this.canvas.width, 5 * this.lanes.length);
+      this.ctx.fill();
+
       for (var j = 0; j < this.lanes.length; j++)
       {
          var i, node, mobj, x, y;
+
+         // draw dashed lines on the road
+         if (j)
+         {
+            this.ctx.save();
+            this.ctx.strokeStyle = "white";
+            this.ctx.setLineDash([10, 10]);
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, 20 + (this.lanes.length - j) * 5);
+            this.ctx.lineTo(this.canvas.width, 20 + (this.lanes.length - j) * 5);
+            this.ctx.stroke();
+            this.ctx.restore();
+         }
+
          for (i = 0, node = this.lanes[j].first.next; node.data != null; i++, node = node.next)
          {
             mobj = node.data;
