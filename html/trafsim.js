@@ -1,6 +1,8 @@
 
 //! simulation frames per redraw
 const SIM_FPD = 1;
+//! display framerate
+const FPS = 30;
 //! maximum number of mobjs in the game (0 for unlimited)
 const MAX_MOBJS = 0;
 //! new mobjs do not enter befor MIN_ENTRY_POS meters
@@ -292,6 +294,7 @@ class TrafSim
       this.avg_cnt = 0;
 
       this.running = 1;
+      this.sim_fpd = SIM_FPD;
 
       this.init_lanes();
    }
@@ -387,7 +390,7 @@ class TrafSim
          return;
       }
 
-      for (var j = 0; j < SIM_FPD; j++, this.cur_frame++)
+      for (var j = 0; j < this.sim_fpd; j++, this.cur_frame++)
       {
          for (var i = 0; i < this.lanes.length; i++)
          {
@@ -439,7 +442,7 @@ class TrafSim
     */
    draw()
    {
-      document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame);
+      document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame) + " (" + (FPS * this.sim_fpd) + "x)";
       document.getElementById("avg_speed").textContent = this.avg_speed.toFixed(1);
       document.getElementById("tput").textContent = (this.avg_cnt / this.cur_frame * 3600).toFixed(1);
       document.getElementById("mobj_cnt").textContent = this.mobj_cnt;
@@ -533,6 +536,14 @@ class TrafSim
                this.running = -(this.cur_frame + 25);
             break;
 
+         case '+':
+            this.sim_fpd++;
+            break;
+
+         case '-':
+            if (this.sim_fpd > 1)
+               this.sim_fpd--;
+            break;
       }
    }
 }
@@ -552,5 +563,5 @@ ts.draw();
 
 window.addEventListener('resize', function(e){ts.scaling(); ts.draw();});
 document.addEventListener('keydown', function(e){ts.key_down_handler(e);});
-ts.timer = window.setInterval(function(){ts.draw(); ts.next_frame();}, 40);
+ts.timer = window.setInterval(function(){ts.draw(); ts.next_frame();}, 1000 / FPS);
 
