@@ -1,3 +1,15 @@
+const MOBJ_DCSN =
+{
+   NONE: 0,
+   FREE_CHANGE_RIGHT: 1,
+   PASS_RIGHT: 2,
+   CHANGE_LEFT: 3,
+   PASS_LEFT: 4,
+   CHANGE_RIGHT: 5,
+   PASS_SLOW_RIGHT: 6
+};
+
+
 class MovingObject
 {
    //! static mobj counter, each mobj gets a unique id
@@ -54,6 +66,14 @@ class MovingObject
       this.t_chg = [0, 0];
       //! minimum time of lane back change
       this.t_chg_back = 10;
+      //! latest decision
+      this.dcsn = MOBJ_DCSN.NONE;
+      //! time of decision
+      this.t_dcsn = 0;
+      //! minimum decision reevaluation periode
+      this.t_eval = 1;
+      //! speed at which one would also pass right with probability p_pass_left
+      this.v_slow = MovingObject.kmh2ms(20);
 
       //! backup data
       this.old = {v_cur: this.v_cur, d_pos: this.d_pos, act: MOBJ_ACT.NONE, prev: null, next: null};
@@ -216,6 +236,37 @@ class MovingObject
    }
 
 
+   /*! This method makes a decision. If it is a new situation, i.e. the
+    * decision to make is a different one than the latest, it decides with
+    * probability p. If the decision is a reevaluation, i.e. it is the same
+    * decision as the latest one, it checks if the previous decision is older
+    * than t_eval and reevaluates it in that case.
+    * @param dcsn Decision to make.
+    * @param p Probability of a positiv decision.
+    * @return It returns 1 if the decision was made positively (true),
+    * otherwise 0 is returned.
+    */
+   decide(dcsn, p)
+   {
+      // if previous decition is the same as the current and the decision
+      // period did not elapse, stick to it
+      if (this.dcsn == dcsn && this.t_cur < this.t_dcsn + this.t_eval)
+         return 0;
+
+      // if decision is made positively
+      if (SRandom.rand_ev(p))
+      {
+         this.dcsn = MOBJ_DCSN.NONE;
+         return 1;
+      }
+
+      // store decision data in case of negative decision
+      this.dcsn = dcsn;
+      this.t_dcsn = this.t_cur;
+      return 0;
+   }
+
+
    /*! The function does the actual simulation of a mobj.
     * @param t_cur Current time frame to simulate. It is assumed that it is
     * stepping by 1.
@@ -273,7 +324,7 @@ class MovingObject
       if (prev == null || !this.in_visibility(prev))
       {
          // change lane to the right if possible
-         if (SRandom.rand_ev(this.p_pref_right) && this.change_right())
+         if (this.decide(MOBJ_DCSN.FREE_CHANGE_RIGHT, this.p_pref_right) && this.change_right())
             return MOBJ_ACT.RIGHT;
 
          // loop over all lanes on the left
@@ -283,8 +334,12 @@ class MovingObject
             var node = lane.ahead_of(this.d_pos);
 
             // continue at next lane if no mobj ahead
-            if (node.data == null || node.data.crash || SRandom.rand_ev(this.p_pass_right))
+            if (node.data == null || !this.in_visibility(node.data))
                continue;
+
+            // check if we simply pass (right of) the object
+            if (node.data.crash || this.decide(MOBJ_DCSN.PASS_RIGHT, this.p_pass_right))
+               break;
 
             // check if object on the left is within minimum distance
             if (this.in_min_dist(node.data))
@@ -294,30 +349,34 @@ class MovingObject
                return MOBJ_ACT.DEC;
             }
 
-            // check if object on the left is within visibilty
-            if (this.in_visibility(node.data))
-            {
-               // move to the next lane on the left
-               if (SRandom.rand_ev(this.p_pass_left) && this.change_left())
-                  return MOBJ_ACT.LEFT;
+            // move to the next lane on the left
+            if (this.decide(MOBJ_DCSN.CHANGE_LEFT, this.p_pass_left) && this.change_left())
+               return MOBJ_ACT.LEFT;
 
-               // and decelerate in case
-               this.decelerate(node.data.v_cur + this.v_diff);
-               return MOBJ_ACT.DEC;
-            }
+            // and decelerate in case
+            this.decelerate(node.data.v_cur + this.v_diff);
+            return MOBJ_ACT.DEC;
          }
 
          // otherwise speedup
          this.accelerate(this.v_max);
 			return MOBJ_ACT.ACC;
-      }
+      } //if (prev == null || !this.in_visibility(prev))
 
       // if possible change lane to the left
-      if ((prev.crash || SRandom.rand_ev(this.p_pass_left)) && this.change_left())
+      if (this.decide(MOBJ_DCSN.PASS_LEFT, this.p_pass_left) && this.change_left())
          return MOBJ_ACT.LEFT;
 
+      // prev mobj is too slow (or has crashed)
+      if (prev.v_cur < this.v_slow)
+      {
+         // probably pass right
+         if (this.decide(MOBJ_DCSN.PASS_SLOW_RIGHT, this.p_pass_left) && this.change_right())
+            return MOBJ_ACT.RIGHT;
+      }
+
       // or if possible change lane to the right
-      if ((prev.crash || SRandom.rand_ev(this.p_pass_right)) && this.change_right())
+      if (this.decide(MOBJ_DCSN.CHANGE_RIGHT, this.p_pass_right) && this.change_right())
          return MOBJ_ACT.RIGHT;
 
       // approach speed difference will be negative if prev mobj is within
@@ -347,7 +406,9 @@ class MovingObject
    }
 
 
-   /*! Check if lane change to dst lane ist possible and execute change in case.
+   /*! Check if lane change to dst lane is possible and execute change in case.
+    * The possibility is evaluated by the distances of the neigboring mobjs and
+    * if the minimum change-back-time t_chg_back has elapsed.
     * @param dst Destination lane.
     * @param p Probability one is intending to change the lane.
     * @return Returns 1 of lane was changed, otherwise 0.
