@@ -363,8 +363,8 @@ class MovingObject
 			return MOBJ_ACT.ACC;
       } //if (prev == null || !this.in_visibility(prev))
 
-      // if possible change lane to the left
-      if (this.decide(MOBJ_DCSN.PASS_LEFT, this.p_pass_left) && this.change_left())
+      // if previous is slower than we, if possible change lane to the left
+      if (prev.v_cur < this.v_cur && this.decide(MOBJ_DCSN.PASS_LEFT, this.p_pass_left) && this.change_left())
          return MOBJ_ACT.LEFT;
 
       // prev mobj is too slow (or has crashed)
