@@ -100,7 +100,7 @@ class FormatTime
 
       h = Math.floor(t / 3600.0);
       m = Math.floor(t / 60.0) % 60;
-      s = t % 60;
+      s = Math.floor(t) % 60;
 
       return FormatTime.pad0(h) + ":" + FormatTime.pad0(m) + ":" + FormatTime.pad0(s);
    }
@@ -287,11 +287,15 @@ class TrafSim
       document.getElementById("dist").textContent = (this.d_max / 1000).toFixed(1);
       this.d_min = 0;
 
+      //! mobjs in total on all lanes
       this.mobj_cnt = 0;
+      //! mobjs per km
+      this.mobj_density = 0;
+      //! average time
+      this.t_avg = 0;
       this.crash_cnt = 0;
-
+      //! average speed
       this.avg_speed = 0;
-      this.avg_cnt = 0;
 
       this.running = 1;
       this.sim_fpd = SIM_FPD;
@@ -367,11 +371,20 @@ class TrafSim
     */
    delete_mobj_node(node)
    {
-      const MAX_AVG_CNT = 1000;
-      var div = this.avg_cnt < MAX_AVG_CNT ? this.avg_cnt : MAX_AVG_CNT;
       node.unlink();
-      this.avg_speed = (this.avg_speed * div + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (div + 1);
-      this.avg_cnt++;
+
+      // calculate average speed
+      if (this.avg_speed == 0)
+         this.avg_speed = MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init));
+      else
+         this.avg_speed = (this.avg_speed +  MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / 2;
+
+      // calculate average time on road
+      if (this.t_avg == 0)
+         this.t_avg = this.cur_frame - node.data.t_init;
+      else
+         this.t_avg = (this.t_avg + this.cur_frame - node.data.t_init) / 2;
+
       console.log(node.data.sim_data());
    }
 
@@ -405,6 +418,7 @@ class TrafSim
             this.crash_cnt += this.lanes[i].recalc(this.cur_frame);
          }
       }
+      this.mobj_density = this.mobj_cnt / DISTANCE * 1000;
 
       // stop simulation if there is a specific amount of simulation frames
       if (MAX_FRAMES && this.cur_frame >= MAX_FRAMES)
@@ -444,8 +458,10 @@ class TrafSim
    {
       document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame) + " (" + (FPS * this.sim_fpd) + "x)";
       document.getElementById("avg_speed").textContent = this.avg_speed.toFixed(1);
-      document.getElementById("tput").textContent = (this.avg_cnt / this.cur_frame * 3600).toFixed(1);
+      document.getElementById("t_avg").textContent = FormatTime.hms(this.t_avg);
+      document.getElementById("tput").textContent = (this.avg_speed * this.mobj_density).toFixed(1);
       document.getElementById("mobj_cnt").textContent = this.mobj_cnt;
+      document.getElementById("mobj_density").textContent = this.mobj_density.toFixed(1);
       document.getElementById("crash_cnt").textContent = this.crash_cnt;
 
       this.ctx.clearRect(0, 0, this.canvas.width, 100);
