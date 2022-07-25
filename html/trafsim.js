@@ -360,7 +360,10 @@ class TrafSim
       node.data.lane = lane;
       node.data.d_pos = -MIN_ENTRY_POS;
       node.data.t_init = this.cur_frame;
-      node.data.v_cur = MovingObject.kmh2ms(70);
+      if (lane.last.prev.data == null)
+         node.data.v_cur = node.data.v_max;
+      else
+         node.data.v_cur = lane.last.prev.data.v_cur > node.data.v_max ? node.data.v_max : lane.last.prev.data.v_cur;
       node.data.save();
 
       // and append it to the lane and increase mobj counter
