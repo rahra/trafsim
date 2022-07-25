@@ -296,6 +296,8 @@ class TrafSim
       this.crash_cnt = 0;
       //! average speed
       this.avg_speed = 0;
+      //! sum of numbers to average
+      this.avg_cnt = 0;
 
       this.running = 1;
       this.sim_fpd = SIM_FPD;
@@ -374,16 +376,10 @@ class TrafSim
       node.unlink();
 
       // calculate average speed
-      if (this.avg_speed == 0)
-         this.avg_speed = MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init));
-      else
-         this.avg_speed = (this.avg_speed +  MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / 2;
-
+      this.avg_speed = (this.avg_speed * this.avg_cnt + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (this.avg_cnt + 1);
       // calculate average time on road
-      if (this.t_avg == 0)
-         this.t_avg = this.cur_frame - node.data.t_init;
-      else
-         this.t_avg = (this.t_avg + this.cur_frame - node.data.t_init) / 2;
+      this.t_avg = (this.t_avg * this.avg_cnt + this.cur_frame - node.data.t_init) / (this.avg_cnt + 1);
+      this.avg_cnt++;
 
       console.log(node.data.sim_data());
    }
