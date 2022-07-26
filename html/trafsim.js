@@ -10,6 +10,8 @@ const MIN_ENTRY_POS = 300;
 /*! Probability that a new mobj fills in if MIN_ENTRY_POS is ok. This controls
  * the traffic density. */
 const P_FILL_IN = 0.3;
+//! display size of mobjs
+const DSIZE = 6;
 //! maximum frames to calculate (0 for unlimited)
 const MAX_FRAMES = 0;
 //! use Math.random() as PRNG
@@ -280,8 +282,11 @@ class TrafSim
       this.ctx = this.canvas.getContext('2d');
       this.cur_frame = 0;
 
+      //! x and y scaling
       this.sx = 1;
       this.sy = 1;
+      //! size of mobjs
+      this.dsize = DSIZE;
 
       this.d_max = rlen;
       document.getElementById("dist").textContent = (this.d_max / 1000).toFixed(1);
@@ -471,11 +476,11 @@ class TrafSim
       this.draw_axis();
       this.ctx.lineWidth = 1;
 
-      var p = 3;
+      var p = 12;
 
       // draw road
       this.ctx.fillStyle = "lightgrey";
-      this.ctx.rect(0, 20, this.canvas.width, 5 * this.lanes.length);
+      this.ctx.rect(0, 20, this.canvas.width, this.dsize * this.lanes.length);
       this.ctx.fill();
 
       for (var j = 0; j < this.lanes.length; j++)
@@ -489,29 +494,29 @@ class TrafSim
             this.ctx.strokeStyle = "white";
             this.ctx.setLineDash([10, 10]);
             this.ctx.beginPath();
-            this.ctx.moveTo(0, 20 + (this.lanes.length - j) * 5);
-            this.ctx.lineTo(this.canvas.width, 20 + (this.lanes.length - j) * 5);
+            this.ctx.moveTo(0, 20 + (this.lanes.length - j) * this.dsize);
+            this.ctx.lineTo(this.canvas.width, 20 + (this.lanes.length - j) * this.dsize);
             this.ctx.stroke();
             this.ctx.restore();
          }
 
+         // draw mobjs
          for (i = 0, node = this.lanes[j].first.next; node.data != null; i++, node = node.next)
          {
             mobj = node.data;
             x = mobj.d_pos * this.sx;
-            y = 20 + (this.lanes.length - j - 1) * 5;
+            y = 20 + (this.lanes.length - j - 1) * this.dsize;
 
             // draw mobj
-            //this.ctx.fillStyle = this.ctx.strokeStyle = X11Colors[mobj.id*179%X11Colors.length].val;
             this.ctx.fillStyle = this.ctx.strokeStyle = mobj.color;
             this.ctx.beginPath();
-            this.ctx.rect(x, y, p, p);
+            this.ctx.rect(x, y, mobj.len * this.sx, this.dsize);
             this.ctx.fill();
 
             // draw visibility range of mobj
             this.ctx.beginPath();
-            this.ctx.moveTo(x + p, y + p * 0.5);
-            this.ctx.lineTo(x + mobj.d_vis * this.sx + p, y + p * 0.5);
+            this.ctx.moveTo(x + this.dsize, y + this.dsize * 0.5);
+            this.ctx.lineTo(x + mobj.d_vis * this.sx + this.dsize, y + this.dsize * 0.5);
             this.ctx.stroke();
 
             // draw speed curve
@@ -525,7 +530,7 @@ class TrafSim
             {
                this.ctx.strokeStyle = "red";
                this.ctx.beginPath();
-               this.ctx.rect(x - 1, y - 1, p + 2, p + 2);
+               this.ctx.rect(x - 1, y - 1, this.dsize + 2, this.dsize + 2);
                this.ctx.stroke();
             }
          }
