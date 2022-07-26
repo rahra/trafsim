@@ -563,6 +563,12 @@ class TrafSim
             this.running = !this.running;
             break;
 
+         case 'd':
+            for (var j = 0; j < this.lanes.length; j++)
+               for (var node = this.lanes[j].first.next; node.data != null; node = node.next)
+                  console.log(node.data.cur_data());
+            break;
+
          case 's':
             if (!this.running)
                this.running = -(this.cur_frame + 1);
