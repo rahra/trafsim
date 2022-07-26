@@ -485,7 +485,7 @@ class TrafSim
 
       for (var j = 0; j < this.lanes.length; j++)
       {
-         var i, node, mobj, x, y;
+         var i, node, mobj, x, y, l;
 
          // draw dashed lines on the road
          if (j)
@@ -506,16 +506,17 @@ class TrafSim
             mobj = node.data;
             x = mobj.d_pos * this.sx;
             y = 20 + (this.lanes.length - j - 1) * this.dsize;
+            l = mobj.len * this.sx;
 
             // draw mobj
             this.ctx.fillStyle = this.ctx.strokeStyle = mobj.color;
             this.ctx.beginPath();
-            this.ctx.rect(x, y, mobj.len * this.sx, this.dsize);
+            this.ctx.rect(x, y, l, this.dsize);
             this.ctx.fill();
 
             // draw visibility range of mobj
             this.ctx.beginPath();
-            this.ctx.moveTo(x + this.dsize, y + this.dsize * 0.5);
+            this.ctx.moveTo(x + l, y + this.dsize * 0.5);
             this.ctx.lineTo(x + mobj.d_vis * this.sx + this.dsize, y + this.dsize * 0.5);
             this.ctx.stroke();
 
