@@ -375,6 +375,8 @@ class TrafSim
    {
       // create and init new mobj and list node
       var node = new DListNode(MObjFactory.make(this.random_mobj_type()));
+      // FIXME: this is not implemented nicely....avoid trucks on lanes >= 2
+      for (var i = 0; lane.id >= 2 && node.data.name == "truck" && i < 10; i++) node.data = MObjFactory.make(this.random_mobj_type());
       node.data.node = node;
       node.data.lane = lane;
       node.data.d_pos = -config_.MIN_ENTRY_POS;
@@ -429,8 +431,8 @@ class TrafSim
             for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; node = node.next, this.mobj_cnt--)
                this.delete_mobj_node(node);
 
-            // fill in new mobjs on 1st and 2nd lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
-            if ((i <= 1) && (!config_.MAX_MOBJS || this.mobj_cnt < config_.MAX_MOBJS) && SRandom.rand_ev(config_.P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos >= 0))
+            // fill in new mobjs if there are less than MAX_MOBJS mobjs and the previous one is far enough
+            if ((!config_.MAX_MOBJS || this.mobj_cnt < config_.MAX_MOBJS) && SRandom.rand_ev(config_.P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos >= 0))
                this.new_mobj_node(this.lanes[i]);
 
             this.crash_cnt += this.lanes[i].recalc(this.cur_frame);
