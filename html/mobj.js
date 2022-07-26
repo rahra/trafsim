@@ -338,7 +338,7 @@ class MovingObject
                continue;
 
             // check if we simply pass (right of) the object
-            if (node.data.crash || this.decide(MOBJ_DCSN.PASS_RIGHT, this.p_pass_right))
+            if (node.data.crash || node.data.v_cur < this.v_slow || this.decide(MOBJ_DCSN.PASS_RIGHT, this.p_pass_right))
                break;
 
             // check if object on the left is within minimum distance
@@ -498,6 +498,13 @@ class MovingObject
    sim_data()
    {
       return "name=\"" + this.name + "\" v_max=" + MovingObject.ms2kmh(this.v_max).toFixed(1) + " t=" + FormatTime.hms(this.t_cur - this.t_init) + " t_slow=" + FormatTime.hms(this.t_slow) + " t_slowp=" + (100 * this.t_slow / (this.t_cur - this.t_init)).toFixed(1) + "% v_avg=" + MovingObject.ms2kmh(config_.DISTANCE / (this.t_cur - this.t_init)).toFixed(1);
+   }
+
+
+   /*! Return current data as a string. */
+   cur_data()
+   {
+      return 'lane=' + this.lane.id + ' name="' + this.name + '" v_cur=' + MovingObject.ms2kmh(this.v_cur).toFixed(1) + ' d_pos=' + this.d_pos.toFixed(1) + ' crash=' + this.crash;
    }
 }
 
