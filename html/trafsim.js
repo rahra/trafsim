@@ -1,37 +1,51 @@
 
-//! simulation frames per redraw
-const SIM_FPD = 1;
-//! display framerate
-const FPS = 25;
-//! maximum number of mobjs in the game (0 for unlimited)
-const MAX_MOBJS = 0;
-//! new mobjs do not enter befor MIN_ENTRY_POS meters
-const MIN_ENTRY_POS = 300;
-/*! Probability that a new mobj fills in if MIN_ENTRY_POS is ok. This controls
- * the traffic density. */
-const P_FILL_IN = 0.3;
-//! display size of mobjs
-const DSIZE = 6;
-//! maximum frames to calculate (0 for unlimited)
-const MAX_FRAMES = 0;
-//! use Math.random() as PRNG
-const USE_MATH_RANDOM = 0;
-//! mobj failure probability per hour
-const MOBJ_FAIL = 0.0;
-//! absolute minimum distance
-const MOBJ_D_MIN = 10;
-//! course distance
-const DISTANCE = 25000;
-//! number of lanes
-const NUM_LANES = 3;
-//! distribution of mobj types
-const MOBJ_TYPES = [
-   {type: "car", p: 0.35},
-   {type: "truck", p: 0.3},
-   {type: "bike", p: 0.01},
-   {type: "blocking", p: 0.29},
-   {type: "aggressive", p: 0.05},
-];
+//! global configuration structure
+var config_ =
+{
+   //! simulation frames per redraw
+   SIM_FPD: 1,
+   //! display framerate
+   FPS: 25,
+   //! maximum number of mobjs in the game (0 for unlimited)
+   MAX_MOBJS: 0,
+   //! new mobjs do not enter befor MIN_ENTRY_POS meters
+   MIN_ENTRY_POS: 300,
+   /*! Probability that a new mobj fills in if MIN_ENTRY_POS is ok. This controls
+    * the traffic density. */
+   P_FILL_IN: 0.3,
+   //! display size of mobjs
+   DSIZE: 6,
+   //! maximum frames to calculate (0 for unlimited)
+   MAX_FRAMES: 0,
+   //! use Math.random() as PRNG
+   USE_MATH_RANDOM: 0,
+   //! mobj failure probability per hour
+   MOBJ_FAIL: 0.0,
+   //! absolute minimum distance
+   MOBJ_D_MIN: 10,
+   //! course distance
+   DISTANCE: 25000,
+   //! number of lanes
+   NUM_LANES: 3,
+   //! distribution of mobj types
+   MOBJ_TYPES: [
+      {type: "car", p: 0.35},
+      {type: "truck", p: 0.3},
+      {type: "bike", p: 0.01},
+      {type: "blocking", p: 0.29},
+      {type: "aggressive", p: 0.05},
+   ]
+};
+
+// overwrite data in global config struct based on user config struct
+if (typeof config !== "undefined")
+{
+   for (const k of Object.keys(config_))
+      if (config.hasOwnProperty(k))
+         config_[k] = config[k];
+}
+
+/*! internal consts */
 //! mobj actions
 const MOBJ_ACT = {
    NONE: 0,
@@ -67,7 +81,7 @@ class SRandom
     */
    static rand()
    {
-      if (USE_MATH_RANDOM)
+      if (config_.USE_MATH_RANDOM)
          return Math.random();
 
       var x = Math.sin(SRandom.seed++) * 10000;
@@ -271,7 +285,7 @@ class Lane
 
 class TrafSim
 {
-   constructor(canvas, rlen = DISTANCE)
+   constructor(canvas, rlen = config_.DISTANCE)
    {
       this.canvas = canvas;
 
@@ -286,7 +300,7 @@ class TrafSim
       this.sx = 1;
       this.sy = 1;
       //! size of mobjs
-      this.dsize = DSIZE;
+      this.dsize = config_.DSIZE;
 
       this.d_max = rlen;
       document.getElementById("dist").textContent = (this.d_max / 1000).toFixed(1);
@@ -305,7 +319,7 @@ class TrafSim
       this.avg_cnt = 0;
 
       this.running = 1;
-      this.sim_fpd = SIM_FPD;
+      this.sim_fpd = config_.SIM_FPD;
 
       this.init_lanes();
    }
@@ -313,7 +327,7 @@ class TrafSim
 
    init_lanes()
    {
-      for (var i = 0; i < NUM_LANES; i++)
+      for (var i = 0; i < config_.NUM_LANES; i++)
       {
          // create new lane
          this.lanes.push(new Lane());
@@ -344,11 +358,11 @@ class TrafSim
    random_mobj_type()
    {
       var rnd = SRandom.rand();
-      for (var i = 0; i < MOBJ_TYPES.length; i++)
+      for (var i = 0; i < config_.MOBJ_TYPES.length; i++)
       {
-         if (rnd < MOBJ_TYPES[i].p)
-            return MOBJ_TYPES[i].type;
-         rnd -= MOBJ_TYPES[i].p;
+         if (rnd < config_.MOBJ_TYPES[i].p)
+            return config_.MOBJ_TYPES[i].type;
+         rnd -= config_.MOBJ_TYPES[i].p;
       }
       console.log("*** no mobj randomly selected, probably definition error in MOBJ_TYPES");
       return "car";
@@ -363,7 +377,7 @@ class TrafSim
       var node = new DListNode(MObjFactory.make(this.random_mobj_type()));
       node.data.node = node;
       node.data.lane = lane;
-      node.data.d_pos = -MIN_ENTRY_POS;
+      node.data.d_pos = -config_.MIN_ENTRY_POS;
       node.data.t_init = this.cur_frame;
       if (lane.last.prev.data == null)
          node.data.v_cur = node.data.v_max;
@@ -416,16 +430,16 @@ class TrafSim
                this.delete_mobj_node(node);
 
             // fill in new mobjs on 1st and 2nd lane if there are less than MAX_MOBJS mobjs and the previous one is far enough
-            if ((i <= 1) && (!MAX_MOBJS || this.mobj_cnt < MAX_MOBJS) && SRandom.rand_ev(P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos >= 0))
+            if ((i <= 1) && (!config_.MAX_MOBJS || this.mobj_cnt < config_.MAX_MOBJS) && SRandom.rand_ev(config_.P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos >= 0))
                this.new_mobj_node(this.lanes[i]);
 
             this.crash_cnt += this.lanes[i].recalc(this.cur_frame);
          }
       }
-      this.mobj_density = this.mobj_cnt / DISTANCE * 1000;
+      this.mobj_density = this.mobj_cnt / config_.DISTANCE * 1000;
 
       // stop simulation if there is a specific amount of simulation frames
-      if (MAX_FRAMES && this.cur_frame >= MAX_FRAMES)
+      if (config_.MAX_FRAMES && this.cur_frame >= config_.MAX_FRAMES)
          window.clearInterval(this.timer);
    }
 
@@ -460,7 +474,7 @@ class TrafSim
     */
    draw()
    {
-      document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame) + " (" + (FPS * this.sim_fpd) + "x)";
+      document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame) + " (" + (config_.FPS * this.sim_fpd) + "x)";
       document.getElementById("avg_speed").textContent = this.avg_speed.toFixed(1);
       document.getElementById("t_avg").textContent = FormatTime.hms(this.t_avg);
       document.getElementById("tput").textContent = (this.avg_speed * this.mobj_density).toFixed(1);
@@ -576,13 +590,13 @@ console.log("===== NEW RUN =====");
 
 var ts = new TrafSim(canvas);
 
-for (var i = 0; i < MOBJ_TYPES.length; i++)
-   document.getElementById("desc").innerHTML += MObjFactory.desc(MOBJ_TYPES[i].type) + "<br>\n";
+for (var i = 0; i < config_.MOBJ_TYPES.length; i++)
+   document.getElementById("desc").innerHTML += MObjFactory.desc(config_.MOBJ_TYPES[i].type) + "<br>\n";
 
 ts.scaling();
 ts.draw();
 
 window.addEventListener('resize', function(e){ts.scaling(); ts.draw();});
 document.addEventListener('keydown', function(e){ts.key_down_handler(e);});
-ts.timer = window.setInterval(function(){ts.draw(); ts.next_frame();}, 1000 / FPS);
+ts.timer = window.setInterval(function(){ts.draw(); ts.next_frame();}, 1000 / config_.FPS);
 

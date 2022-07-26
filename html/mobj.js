@@ -108,7 +108,7 @@ class MovingObject
     */
    get d_vis()
    {
-		return Math.max(this.v_cur * this.t_vis, MOBJ_D_MIN);
+		return Math.max(this.v_cur * this.t_vis, config_.MOBJ_D_MIN);
    }
 
 
@@ -116,7 +116,7 @@ class MovingObject
     */
    get d_min()
    {
-		return Math.max(this.v_cur * this.t_min, MOBJ_D_MIN);
+		return Math.max(this.v_cur * this.t_min, config_.MOBJ_D_MIN);
    }
 
 
@@ -283,7 +283,7 @@ class MovingObject
       this.t_cur = t_cur;
 
       // check for random mobj failure
-      if (SRandom.rand_ev(MOBJ_FAIL / 3600.0))
+      if (SRandom.rand_ev(config_.MOBJ_FAIL / 3600.0))
       {
          console.log(this.id + " fails");
          this.crash = 1;
@@ -497,7 +497,7 @@ class MovingObject
 
    sim_data()
    {
-      return "name=\"" + this.name + "\" v_max=" + MovingObject.ms2kmh(this.v_max).toFixed(1) + " t=" + FormatTime.hms(this.t_cur - this.t_init) + " t_slow=" + FormatTime.hms(this.t_slow) + " t_slowp=" + (100 * this.t_slow / (this.t_cur - this.t_init)).toFixed(1) + "% v_avg=" + MovingObject.ms2kmh(DISTANCE / (this.t_cur - this.t_init)).toFixed(1);
+      return "name=\"" + this.name + "\" v_max=" + MovingObject.ms2kmh(this.v_max).toFixed(1) + " t=" + FormatTime.hms(this.t_cur - this.t_init) + " t_slow=" + FormatTime.hms(this.t_slow) + " t_slowp=" + (100 * this.t_slow / (this.t_cur - this.t_init)).toFixed(1) + "% v_avg=" + MovingObject.ms2kmh(config_.DISTANCE / (this.t_cur - this.t_init)).toFixed(1);
    }
 }
 
