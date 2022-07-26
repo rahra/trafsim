@@ -302,8 +302,8 @@ class TrafSim
       //! size of mobjs
       this.dsize = config_.DSIZE;
       //! speed curve size vars
-      this.chgt = 1.5;
-      this.coff = 40;
+      this.chgt = 2.0;
+      this.coff = 20;
       this.cmul = 80;
 
       this.d_max = rlen;
@@ -324,6 +324,8 @@ class TrafSim
 
       this.running = 1;
       this.sim_fpd = config_.SIM_FPD;
+      //! helper var for synchronizing key strokes
+      this.key_action = "";
 
       this.init_lanes();
    }
@@ -418,6 +420,49 @@ class TrafSim
     */
    next_frame()
    {
+      // evaluate keys
+      switch (this.key_action)
+      {
+         case ' ':
+            this.running = !this.running;
+            break;
+
+         // clear crashes
+         case 'c':
+            for (var j = 0; j < this.lanes.length; j++)
+               for (var node = this.lanes[j].first.next; node.data != null; node = node.next)
+                  if (node.data.crash)
+                     node.unlink();
+            break;
+
+         // dump current data
+         case 'd':
+            for (var j = 0; j < this.lanes.length; j++)
+               for (var node = this.lanes[j].first.next; node.data != null; node = node.next)
+                  console.log(node.data.cur_data());
+            break;
+
+         case 's':
+            if (!this.running)
+               this.running = -(this.cur_frame + 1);
+            break;
+
+         case 'S':
+            if (!this.running)
+               this.running = -(this.cur_frame + 25);
+            break;
+
+         case '+':
+            this.sim_fpd++;
+            break;
+
+         case '-':
+            if (this.sim_fpd > 1)
+               this.sim_fpd--;
+            break;
+      }
+      this.key_action = "";
+
       if (!this.running)
          return;
 
@@ -572,37 +617,7 @@ class TrafSim
 
    key_down_handler(e)
    {
-      switch (e.key)
-      {
-         case ' ':
-            this.running = !this.running;
-            break;
-
-         case 'd':
-            for (var j = 0; j < this.lanes.length; j++)
-               for (var node = this.lanes[j].first.next; node.data != null; node = node.next)
-                  console.log(node.data.cur_data());
-            break;
-
-         case 's':
-            if (!this.running)
-               this.running = -(this.cur_frame + 1);
-            break;
-
-         case 'S':
-            if (!this.running)
-               this.running = -(this.cur_frame + 25);
-            break;
-
-         case '+':
-            this.sim_fpd++;
-            break;
-
-         case '-':
-            if (this.sim_fpd > 1)
-               this.sim_fpd--;
-            break;
-      }
+      this.key_action = e.key;
    }
 }
 
