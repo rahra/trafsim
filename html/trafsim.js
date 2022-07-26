@@ -301,6 +301,10 @@ class TrafSim
       this.sy = 1;
       //! size of mobjs
       this.dsize = config_.DSIZE;
+      //! speed curve size vars
+      this.chgt = 1.5;
+      this.coff = 40;
+      this.cmul = 80;
 
       this.d_max = rlen;
       document.getElementById("dist").textContent = (this.d_max / 1000).toFixed(1);
@@ -347,7 +351,7 @@ class TrafSim
    scaling()
    {
       this.canvas.width = document.body.clientWidth;
-      this.canvas.height = 300; //window.innerHeight;
+      this.canvas.height = this.coff + this.lanes.length * this.cmul * this.chgt;
 
       this.sx = this.canvas.width / (this.d_max - this.d_min);
       //this.sy = this.canvas.height / 100;
@@ -451,12 +455,12 @@ class TrafSim
       // draw x-axis of speed curve
       this.ctx.strokeStyle = "grey";
       this.ctx.beginPath();
-      this.ctx.moveTo(0, 300 - MovingObject.kmh2ms(210) * 3);
-      this.ctx.lineTo(0, 300);
-      this.ctx.lineTo(this.canvas.width, 300);
+      this.ctx.moveTo(0, -MovingObject.kmh2ms(210) * this.chgt);
+      this.ctx.lineTo(0, 0);
+      this.ctx.lineTo(this.canvas.width, 0);
       this.ctx.stroke();
 
-      this.ctx.font = "10pt sans-serif";
+      this.ctx.font = (5 * this.chgt).toFixed(0) + "pt sans-serif";
       this.ctx.strokeStyle = "lightgrey";
       this.ctx.fillStyle = "grey";
       this.ctx.lineWidth = 0.5;
@@ -464,10 +468,10 @@ class TrafSim
       for (var i = step; i <= 200; i += step)
       {
          this.ctx.beginPath();
-         this.ctx.moveTo(0, 300 - MovingObject.kmh2ms(i) * 3);
-         this.ctx.lineTo(this.canvas.width, 300 - MovingObject.kmh2ms(i) * 3);
+         this.ctx.moveTo(0, -MovingObject.kmh2ms(i) * this.chgt);
+         this.ctx.lineTo(this.canvas.width, -MovingObject.kmh2ms(i) * this.chgt);
          this.ctx.stroke();
-         this.ctx.fillText(i, 10, 300 - MovingObject.kmh2ms(i) * 3 + 5);
+         this.ctx.fillText(i, 10, -MovingObject.kmh2ms(i) * this.chgt + 5);
       }
    }
 
@@ -484,12 +488,20 @@ class TrafSim
       document.getElementById("mobj_density").textContent = this.mobj_density.toFixed(1);
       document.getElementById("crash_cnt").textContent = this.crash_cnt;
 
-      this.ctx.clearRect(0, 0, this.canvas.width, 100);
+      this.ctx.clearRect(0, 0, this.canvas.width, this.coff);
       this.ctx.beginPath();
       this.ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
-      this.ctx.rect(0, 100, this.canvas.width, 200);
+      this.ctx.rect(0, this.coff, this.canvas.width, this.lanes.length * this.cmul * this.chgt);
       this.ctx.fill();
-      this.draw_axis();
+
+      for (var j = 0; j < this.lanes.length; j++)
+      {
+         this.ctx.save();
+         this.ctx.translate(0, this.coff + this.chgt * this.cmul * (j + 1));
+         this.draw_axis();
+         this.ctx.restore();
+      }
+
       this.ctx.lineWidth = 1;
 
       var p = 12;
@@ -537,10 +549,13 @@ class TrafSim
             this.ctx.stroke();
 
             // draw speed curve
+            this.ctx.save();
+            this.ctx.translate(0, this.coff + this.chgt * this.cmul * (this.lanes.length - j));
             this.ctx.beginPath();
-            this.ctx.moveTo(mobj.old.d_pos * this.sx, 300 - mobj.old.v_cur * 3);
-            this.ctx.lineTo(x, 300 - mobj.v_cur * 3);
+            this.ctx.moveTo(mobj.old.d_pos * this.sx, -mobj.old.v_cur * this.chgt);
+            this.ctx.lineTo(x, -mobj.v_cur * this.chgt);
             this.ctx.stroke();
+            this.ctx.restore();
 
             // draw crash box
             if (mobj.crash)
