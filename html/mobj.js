@@ -328,7 +328,7 @@ class MovingObject
             return MOBJ_ACT.RIGHT;
 
          // loop over all lanes on the left
-         for (var lane = this.lane.left; lane != null; lane = lane.left)
+         for (var lane = this.lane.left; lane != null; lane = /*lane.left*/ null)
          {
             // get object ahead on the left lane
             var node = lane.ahead_of(this.d_pos);
