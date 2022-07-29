@@ -26,6 +26,8 @@ var config =
    //MAX_FRAMES: 0,
    //! use Math.random() as PRNG
    //USE_MATH_RANDOM: 0,
+   //! display visibility range line
+   //SHOW_VIS_RANGE: 0,
    //! mobj failure probability per hour
    //MOBJ_FAIL: 0.0,
    //! absolute minimum distance

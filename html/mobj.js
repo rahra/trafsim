@@ -80,6 +80,15 @@ class MovingObject
    }
 
 
+   /*! This removes all references to help the GC.
+    */
+   destructor()
+   {
+      delete this.node;
+      delete this.lane;
+   }
+
+
    get p_pass_right()
    {
       return this._p_pass_right;

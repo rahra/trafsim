@@ -19,6 +19,8 @@ var config_ =
    MAX_FRAMES: 0,
    //! use Math.random() as PRNG
    USE_MATH_RANDOM: 0,
+   //! display visibility range line
+   SHOW_VIS_RANGE: 0,
    //! mobj failure probability per hour
    MOBJ_FAIL: 0.0,
    //! absolute minimum distance
@@ -132,6 +134,16 @@ class DListNode
       this.next = null;    // next means behind
       //! data pointer
       this.data = data;
+   }
+
+
+   /*! This removes all references to help the GC.
+    */
+   destructor()
+   {
+      delete this.data;
+      delete this.next;
+      delete this.prev;
    }
 
 
@@ -412,6 +424,9 @@ class TrafSim
       this.avg_cnt++;
 
       console.log(node.data.sim_data());
+
+      node.data.destructor();
+      node.destructor();
    }
 
 
@@ -477,8 +492,12 @@ class TrafSim
          for (var i = 0; i < this.lanes.length; i++)
          {
             // remove mobjs which are out of scope of the lane
-            for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; node = node.next, this.mobj_cnt--)
-               this.delete_mobj_node(node);
+            for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; /*node = node.next,*/ this.mobj_cnt--)
+            {
+               var dnode = node;
+               node = node.next;
+               this.delete_mobj_node(dnode);
+            }
 
             // fill in new mobjs if there are less than MAX_MOBJS mobjs and the previous one is far enough
             if ((!config_.MAX_MOBJS || this.mobj_cnt < config_.MAX_MOBJS) && SRandom.rand_ev(config_.P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos >= 0))
@@ -579,7 +598,7 @@ class TrafSim
             mobj = node.data;
             x = mobj.d_pos * this.sx;
             y = 20 + (this.lanes.length - j - 1) * this.dsize;
-            l = mobj.len * this.sx;
+            l = Math.max(mobj.len * this.sx, 1.0);
 
             // draw mobj
             this.ctx.fillStyle = this.ctx.strokeStyle = mobj.color;
@@ -588,10 +607,13 @@ class TrafSim
             this.ctx.fill();
 
             // draw visibility range of mobj
-            this.ctx.beginPath();
-            this.ctx.moveTo(x + l, y + this.dsize * 0.5);
-            this.ctx.lineTo(x + mobj.d_vis * this.sx + this.dsize, y + this.dsize * 0.5);
-            this.ctx.stroke();
+            if (config_.SHOW_VIS_RANGE)
+            {
+               this.ctx.beginPath();
+               this.ctx.moveTo(x + l, y + this.dsize * 0.5);
+               this.ctx.lineTo(x + mobj.d_vis * this.sx + this.dsize, y + this.dsize * 0.5);
+               this.ctx.stroke();
+            }
 
             // draw speed curve
             this.ctx.save();
