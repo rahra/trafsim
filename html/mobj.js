@@ -54,8 +54,12 @@ class MovingObject
       this._p_pref_right = 1.0;
       //! display color
       this.color = "grey";
-      //! initial time frame (should be set on creation)
-      this.t_init = 0;
+      //! time frame of start of simulation measurement
+      this.t_start = 0;
+      //! time frame of end of simulation measurement
+      this.t_end = 0;
+      //! do measurement
+      this.measure = 0;
       //! name/type of this mobj
       this.name = "MovingObject";
       //! length of mobj
@@ -138,6 +142,13 @@ class MovingObject
    get a_dec()
    {
       return this._a_dec;
+   }
+
+
+   get v_avg()
+   {
+      var t = this.t_end - this.t_start;
+      return t > 0 ?  config_.DISTANCE / t : 0;
    }
 
 
@@ -288,6 +299,28 @@ class MovingObject
          return MOBJ_ACT.NONE;
 
       this.integrity(t_cur);
+
+      // check if mobj passed start/finish line
+      if (this.d_pos <= 0)
+      {
+         this.t_start = t_cur;
+      }
+      else if (this.d_pos < config_.DISTANCE)
+      {
+         this.t_end = t_cur;
+         this.measure = 1;
+      }
+      else
+      {
+         this.measure = 0;
+      }
+
+/*      if (this.old.d_pos <= 0 && this.d_pos >= 0)
+      {
+         this.t_init = t_cur;
+         this.t_slow = 0;
+      }*/
+
       this.save();
       this.t_cur = t_cur;
 
@@ -310,7 +343,7 @@ class MovingObject
 		this.d_pos += this.v_cur;
 
       // increase slow timer if not going at max speed
-      if (this.v_cur < this.v_max * 0.95)
+      if (this.measure && this.v_cur < this.v_max * 0.90)
          this.t_slow++;
 
       // get previous mobject
@@ -506,7 +539,9 @@ class MovingObject
 
    sim_data()
    {
-      return "name=\"" + this.name + "\" v_max=" + MovingObject.ms2kmh(this.v_max).toFixed(1) + " t=" + FormatTime.hms(this.t_cur - this.t_init) + " t_slow=" + FormatTime.hms(this.t_slow) + " t_slowp=" + (100 * this.t_slow / (this.t_cur - this.t_init)).toFixed(1) + "% v_avg=" + MovingObject.ms2kmh(config_.DISTANCE / (this.t_cur - this.t_init)).toFixed(1);
+      var t = this.t_end - this.t_start;
+
+      return "name=\"" + this.name + "\" v_max=" + MovingObject.ms2kmh(this.v_max).toFixed(1) + " t=" + FormatTime.hms(t) + " t_slow=" + FormatTime.hms(this.t_slow) + " t_slowp=" + (100 * this.t_slow / (t)).toFixed(1) + "% v_avg=" + MovingObject.ms2kmh(this.v_avg).toFixed(1);
    }
 
 

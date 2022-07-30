@@ -34,6 +34,8 @@ var config =
    //MOBJ_D_MIN: 10,
    //! course distance
    //DISTANCE: 25000,
+   //! pre-simulation distance
+   //PRESIM_DISTANCE: -2500,
    //! number of lanes
    //NUM_LANES: 3,
    //! distribution of mobj types

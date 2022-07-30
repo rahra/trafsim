@@ -27,6 +27,8 @@ var config_ =
    MOBJ_D_MIN: 10,
    //! course distance
    DISTANCE: 25000,
+   //! pre-simulation distance
+   PRESIM_DISTANCE: -2500,
    //! number of lanes
    NUM_LANES: 3,
    //! distribution of mobj types
@@ -320,7 +322,7 @@ class TrafSim
 
       this.d_max = rlen;
       document.getElementById("dist").textContent = (this.d_max / 1000).toFixed(1);
-      this.d_min = 0;
+      this.d_min = config_.PRESIM_DISTANCE;
 
       //! mobjs in total on all lanes
       this.mobj_cnt = 0;
@@ -367,7 +369,7 @@ class TrafSim
       this.canvas.width = document.body.clientWidth;
       this.canvas.height = this.coff + this.lanes.length * this.cmul * this.chgt;
 
-      this.sx = this.canvas.width / (this.d_max - this.d_min);
+      this.sx = this.canvas.width / (this.d_max - this.d_min * 2);
       //this.sy = this.canvas.height / 100;
       this.sy = this.sx;
    }
@@ -397,8 +399,8 @@ class TrafSim
       for (var i = 0; lane.id >= 2 && node.data.name == "truck" && i < 10; i++) node.data = MObjFactory.make(this.random_mobj_type());
       node.data.node = node;
       node.data.lane = lane;
-      node.data.d_pos = -config_.MIN_ENTRY_POS;
-      node.data.t_init = this.cur_frame;
+      node.data.d_pos = this.d_min - config_.MIN_ENTRY_POS;
+//      node.data.t_init = this.cur_frame;
       if (lane.last.prev.data == null)
          node.data.v_cur = node.data.v_max;
       else
@@ -418,9 +420,9 @@ class TrafSim
       node.unlink();
 
       // calculate average speed
-      this.avg_speed = (this.avg_speed * this.avg_cnt + MovingObject.ms2kmh(node.data.d_pos / (this.cur_frame - node.data.t_init))) / (this.avg_cnt + 1);
+      this.avg_speed = (this.avg_speed * this.avg_cnt + MovingObject.ms2kmh(node.data.v_avg)) / (this.avg_cnt + 1);
       // calculate average time on road
-      this.t_avg = (this.t_avg * this.avg_cnt + this.cur_frame - node.data.t_init) / (this.avg_cnt + 1);
+      this.t_avg = (this.t_avg * this.avg_cnt + node.data.t_end - node.data.t_start) / (this.avg_cnt + 1);
       this.avg_cnt++;
 
       console.log(node.data.sim_data());
@@ -492,7 +494,7 @@ class TrafSim
          for (var i = 0; i < this.lanes.length; i++)
          {
             // remove mobjs which are out of scope of the lane
-            for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max; /*node = node.next,*/ this.mobj_cnt--)
+            for (var node = this.lanes[i].first.next; node.data != null && node.data.d_pos > this.d_max - this.d_min; /*node = node.next,*/ this.mobj_cnt--)
             {
                var dnode = node;
                node = node.next;
@@ -500,7 +502,7 @@ class TrafSim
             }
 
             // fill in new mobjs if there are less than MAX_MOBJS mobjs and the previous one is far enough
-            if ((!config_.MAX_MOBJS || this.mobj_cnt < config_.MAX_MOBJS) && SRandom.rand_ev(config_.P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos >= 0))
+            if ((!config_.MAX_MOBJS || this.mobj_cnt < config_.MAX_MOBJS) && SRandom.rand_ev(config_.P_FILL_IN) && (this.lanes[i].last.prev.data == null || this.lanes[i].last.prev.data.d_pos >= this.d_min))
                this.new_mobj_node(this.lanes[i]);
 
             this.crash_cnt += this.lanes[i].recalc(this.cur_frame);
@@ -575,9 +577,22 @@ class TrafSim
       this.ctx.rect(0, 20, this.canvas.width, this.dsize * this.lanes.length);
       this.ctx.fill();
 
+      // km lines
+      for (var i = 0; i <= this.d_max; i += 1000)
+      {
+         if (i == 0 || i == this.d_max)
+            this.ctx.strokeStyle = "red";
+         else
+            this.ctx.strokeStyle = "green";
+         this.ctx.beginPath();
+         this.ctx.moveTo((i -this.d_min) * this.sx, 10);
+         this.ctx.lineTo((i -this.d_min) * this.sx, this.dsize * this.lanes.length + 30);
+         this.ctx.stroke();
+      }
+
       for (var j = 0; j < this.lanes.length; j++)
       {
-         var i, node, mobj, x, y, l;
+         var i, node, mobj, x, y, l, x0;
 
          // draw dashed lines on the road
          if (j)
@@ -596,7 +611,8 @@ class TrafSim
          for (i = 0, node = this.lanes[j].first.next; node.data != null; i++, node = node.next)
          {
             mobj = node.data;
-            x = mobj.d_pos * this.sx;
+            x = (mobj.d_pos - this.d_min) * this.sx;
+            x0 = (mobj.old.d_pos - this.d_min) * this.sx;
             y = 20 + (this.lanes.length - j - 1) * this.dsize;
             l = Math.max(mobj.len * this.sx, 1.0);
 
@@ -619,7 +635,7 @@ class TrafSim
             this.ctx.save();
             this.ctx.translate(0, this.coff + this.chgt * this.cmul * (this.lanes.length - j));
             this.ctx.beginPath();
-            this.ctx.moveTo(mobj.old.d_pos * this.sx, -mobj.old.v_cur * this.chgt);
+            this.ctx.moveTo(x0, -mobj.old.v_cur * this.chgt);
             this.ctx.lineTo(x, -mobj.v_cur * this.chgt);
             this.ctx.stroke();
             this.ctx.restore();
