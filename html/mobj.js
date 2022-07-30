@@ -58,6 +58,10 @@ class MovingObject
       this.t_start = 0;
       //! time frame of end of simulation measurement
       this.t_end = 0;
+      //! position of start of simulation measurement
+      this.d_start = 0;
+      //! position of end of simulation measurement
+      this.d_end = 0;
       //! do measurement
       this.measure = 0;
       //! name/type of this mobj
@@ -78,6 +82,8 @@ class MovingObject
       this.t_eval = 1;
       //! speed at which one would also pass right with probability p_pass_left
       this.v_slow = MovingObject.kmh2ms(20);
+      //! simulation distance
+      this.distance = config_.DISTANCE;
 
       //! backup data
       this.old = {v_cur: this.v_cur, d_pos: this.d_pos, act: MOBJ_ACT.NONE, prev: null, next: null};
@@ -148,7 +154,7 @@ class MovingObject
    get v_avg()
    {
       var t = this.t_end - this.t_start;
-      return t > 0 ?  config_.DISTANCE / t : 0;
+      return t > 0 ?  (this.d_end - this.d_start) / t : 0;
    }
 
 
@@ -304,10 +310,12 @@ class MovingObject
       if (this.d_pos <= 0)
       {
          this.t_start = t_cur;
+         this.d_start = this.d_pos;
       }
-      else if (this.d_pos < config_.DISTANCE)
+      else if (this.d_pos < this.distance)
       {
          this.t_end = t_cur;
+         this.d_end = this.d_pos;
          this.measure = 1;
       }
       else
