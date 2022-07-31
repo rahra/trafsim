@@ -336,29 +336,15 @@ class Lane
 
 class TrafSim
 {
-   constructor(canvas, rlen = config_.DISTANCE)
+   constructor(rlen = config_.DISTANCE)
    {
-      this.canvas = canvas;
-
       this.lanes = [];
       this.timer = null;
 
       this.t_frame = 1;
-      this.ctx = this.canvas.getContext('2d');
       this.cur_frame = 0;
 
-      //! x and y scaling
-      this.sx = 1;
-      this.sy = 1;
-      //! size of mobjs
-      this.dsize = config_.DSIZE;
-      //! speed curve size vars
-      this.chgt = 2.0;
-      this.coff = 20;
-      this.cmul = 80;
-
       this.d_max = rlen;
-      document.getElementById("dist").textContent = (this.d_max / 1000).toFixed(1);
       this.d_min = config_.PRESIM_DISTANCE;
 
       //! mobjs in total on all lanes
@@ -396,19 +382,6 @@ class TrafSim
             this.lanes[i].right = this.lanes[i - 1];
          }
       }
-   }
-
-
-   /*! Calculate scaling of display.
-    */
-   scaling()
-   {
-      this.canvas.width = document.body.clientWidth;
-      this.canvas.height = this.coff + this.lanes.length * this.cmul * this.chgt;
-
-      this.sx = this.canvas.width / (this.d_max - this.d_min * 2);
-      //this.sy = this.canvas.height / 100;
-      this.sy = this.sx;
    }
 
 
@@ -553,6 +526,40 @@ class TrafSim
       if (config_.MAX_FRAMES && this.cur_frame >= config_.MAX_FRAMES)
          window.clearInterval(this.timer);
    }
+}
+
+
+class SimDisplay
+{
+   constructor(canvas, ts)
+   {
+      this.canvas = canvas;
+      this.ctx = this.canvas.getContext('2d');
+      this.ts = ts;
+
+      //! x and y scaling
+      this.sx = 1;
+      this.sy = 1;
+      //! size of mobjs
+      this.dsize = config_.DSIZE;
+      //! speed curve size vars
+      this.chgt = 2.0;
+      this.coff = 20;
+      this.cmul = 80;
+
+      document.getElementById("dist").textContent = (ts.d_max / 1000).toFixed(1);
+   }
+
+   /*! Calculate scaling of display.
+    */
+   scaling()
+   {
+      this.canvas.width = document.body.clientWidth;
+      this.canvas.height = this.coff + ts.lanes.length * this.cmul * this.chgt;
+
+      this.sx = this.canvas.width / (ts.d_max - ts.d_min * 2);
+      this.sy = this.sx;
+   }
 
 
    draw_axis()
@@ -585,28 +592,28 @@ class TrafSim
     */
    draw()
    {
-      document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame) + " (" + (config_.FPS * this.sim_fpd) + "x)";
-      document.getElementById("v_avg").textContent = MovingObject.ms2kmh(this.v_avg).toFixed(1);
-      document.getElementById("t_avg").textContent = FormatTime.hms(this.t_avg);
-      document.getElementById("tput").textContent = (this.v_avg * this.mobj_density).toFixed(1);
-      document.getElementById("mobj_cnt").textContent = this.mobj_cnt;
-      document.getElementById("mobj_density").textContent = this.mobj_density.toFixed(1);
-      document.getElementById("crash_cnt").textContent = this.crash_cnt;
+      document.getElementById("t_cur").textContent = FormatTime.hms(ts.cur_frame) + " (" + (config_.FPS * ts.sim_fpd) + "x)";
+      document.getElementById("v_avg").textContent = MovingObject.ms2kmh(ts.v_avg).toFixed(1);
+      document.getElementById("t_avg").textContent = FormatTime.hms(ts.t_avg);
+      document.getElementById("tput").textContent = (ts.v_avg * ts.mobj_density).toFixed(1);
+      document.getElementById("mobj_cnt").textContent = ts.mobj_cnt;
+      document.getElementById("mobj_density").textContent = ts.mobj_density.toFixed(1);
+      document.getElementById("crash_cnt").textContent = ts.crash_cnt;
 
       this.ctx.clearRect(0, 0, this.canvas.width, this.coff);
       this.ctx.beginPath();
       this.ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
-      this.ctx.rect(0, this.coff, this.canvas.width, this.lanes.length * this.cmul * this.chgt);
+      this.ctx.rect(0, this.coff, this.canvas.width, ts.lanes.length * this.cmul * this.chgt);
       this.ctx.fill();
 
-      for (var j = 0; j < this.lanes.length; j++)
+      for (var j = 0; j < ts.lanes.length; j++)
       {
          this.ctx.save();
          this.ctx.translate(0, this.coff + this.chgt * this.cmul * (j + 1));
          this.draw_axis();
          var y = 40 -this.cmul * this.chgt;
          this.ctx.clearRect(40, y, 550, -10);
-         var lane = this.lanes[this.lanes.length - j - 1];
+         var lane = ts.lanes[ts.lanes.length - j - 1];
          this.ctx.fillText("n_sim=" + lane.n_sim + " v_avg=" + MovingObject.ms2kmh(lane.v_avg).toFixed(1) + " km/h t_avg=" + FormatTime.hms(lane.t_avg) + " f_sim=" + lane.f_sim.toFixed(1) + " /h r_sim=" + lane.r_sim.toFixed(1) + " /km", 40, y);
          this.ctx.restore();
       }
@@ -617,23 +624,23 @@ class TrafSim
 
       // draw road
       this.ctx.fillStyle = "lightgrey";
-      this.ctx.rect(0, 20, this.canvas.width, this.dsize * this.lanes.length);
+      this.ctx.rect(0, 20, this.canvas.width, this.dsize * ts.lanes.length);
       this.ctx.fill();
 
       // km lines
-      for (var i = 0; i <= this.d_max; i += 1000)
+      for (var i = 0; i <= ts.d_max; i += 1000)
       {
-         if (i == 0 || i == this.d_max)
+         if (i == 0 || i == ts.d_max)
             this.ctx.strokeStyle = "red";
          else
             this.ctx.strokeStyle = "green";
          this.ctx.beginPath();
-         this.ctx.moveTo((i -this.d_min) * this.sx, 10);
-         this.ctx.lineTo((i -this.d_min) * this.sx, this.dsize * this.lanes.length + 30);
+         this.ctx.moveTo((i -ts.d_min) * this.sx, 10);
+         this.ctx.lineTo((i -ts.d_min) * this.sx, this.dsize * ts.lanes.length + 30);
          this.ctx.stroke();
       }
 
-      for (var j = 0; j < this.lanes.length; j++)
+      for (var j = 0; j < ts.lanes.length; j++)
       {
          var i, node, mobj, x, y, l, x0;
 
@@ -644,19 +651,19 @@ class TrafSim
             this.ctx.strokeStyle = "white";
             this.ctx.setLineDash([10, 10]);
             this.ctx.beginPath();
-            this.ctx.moveTo(0, 20 + (this.lanes.length - j) * this.dsize);
-            this.ctx.lineTo(this.canvas.width, 20 + (this.lanes.length - j) * this.dsize);
+            this.ctx.moveTo(0, 20 + (ts.lanes.length - j) * this.dsize);
+            this.ctx.lineTo(this.canvas.width, 20 + (ts.lanes.length - j) * this.dsize);
             this.ctx.stroke();
             this.ctx.restore();
          }
 
          // draw mobjs
-         for (i = 0, node = this.lanes[j].first.next; node.data != null; i++, node = node.next)
+         for (i = 0, node = ts.lanes[j].first.next; node.data != null; i++, node = node.next)
          {
             mobj = node.data;
-            x = (mobj.d_pos - this.d_min) * this.sx;
-            x0 = (mobj.old.d_pos - this.d_min) * this.sx;
-            y = 20 + (this.lanes.length - j - 1) * this.dsize;
+            x = (mobj.d_pos - ts.d_min) * this.sx;
+            x0 = (mobj.old.d_pos - ts.d_min) * this.sx;
+            y = 20 + (ts.lanes.length - j - 1) * this.dsize;
             l = Math.max(mobj.len * this.sx, 1.0);
 
             // draw mobj
@@ -676,7 +683,7 @@ class TrafSim
 
             // draw speed curve
             this.ctx.save();
-            this.ctx.translate(0, this.coff + this.chgt * this.cmul * (this.lanes.length - j));
+            this.ctx.translate(0, this.coff + this.chgt * this.cmul * (ts.lanes.length - j));
             this.ctx.beginPath();
             this.ctx.moveTo(x0, -mobj.old.v_cur * this.chgt);
             this.ctx.lineTo(x, -mobj.v_cur * this.chgt);
@@ -698,7 +705,7 @@ class TrafSim
 
    key_down_handler(e)
    {
-      this.key_action = e.key;
+      ts.key_action = e.key;
    }
 }
 
@@ -707,15 +714,17 @@ var canvas = document.getElementById('raceplane');
 
 console.log("===== NEW RUN =====");
 
-var ts = new TrafSim(canvas);
 
 for (var i = 0; i < config_.MOBJ_TYPES.length; i++)
    document.getElementById("desc").innerHTML += MObjFactory.desc(config_.MOBJ_TYPES[i].type) + "<br>\n";
 
-ts.scaling();
-ts.draw();
+var ts = new TrafSim();
+var sd = new SimDisplay(canvas, ts);
 
-window.addEventListener('resize', function(e){ts.scaling(); ts.draw();});
-document.addEventListener('keydown', function(e){ts.key_down_handler(e);});
-ts.timer = window.setInterval(function(){ts.draw(); ts.next_frame();}, 1000 / config_.FPS);
+sd.scaling();
+sd.draw();
+
+window.addEventListener('resize', function(e){sd.scaling(); sd.draw();});
+document.addEventListener('keydown', function(e){sd.key_down_handler(e);});
+ts.timer = window.setInterval(function(){sd.draw(); ts.next_frame();}, 1000 / config_.FPS);
 
