@@ -47,11 +47,11 @@ class MovingObject
       //! frame of current state
       this.t_cur = 0;
       //! probability one would pass left
-      this._p_pass_left = 1.0;
+      this._p_pass_left = 0.90;
       //! probability one would pass right
-      this._p_pass_right = 0.0;
+      this._p_pass_right = 0.01;
       //! probabilty one would change back to the right lanes
-      this._p_pref_right = 1.0;
+      this._p_pref_right = 0.90;
       //! display color
       this.color = "grey";
       //! time frame of start of simulation measurement
@@ -669,7 +669,7 @@ class BlockingCar extends MovingObject
 
       // if there is no mobj behind or too far away don't change lane back
       if (this.node.next.data == null || this.node.next.data.d_pos < this.d_pos - this.d_vis)
-         return 0;
+         return 0.01;
 
       // otherwise change back with minimalistic probability
       return 0.05;
