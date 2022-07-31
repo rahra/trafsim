@@ -548,6 +548,10 @@ class SimDisplay
       this.cmul = 80;
 
       document.getElementById("dist").textContent = (ts.d_max / 1000).toFixed(1);
+
+      this.draw_zoom = 0;
+      this.z_pos = 0;
+      this.z_dist = 1500;
    }
 
    /*! Calculate scaling of display.
@@ -700,6 +704,56 @@ class SimDisplay
             }
          }
       }
+
+      if (this.draw_zoom)
+         this.zoom_display(zctx, this.z_pos, 2000, 400, 100);
+   }
+
+
+   zoom_display(ctx, pos, dist, w, h)
+   {
+      var sx = w / dist;
+      var sy = 1;//this.ts.lanes.length * 4 / h;
+      var mobj, node;
+      var x, y, l;
+      
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "lightgrey";
+      ctx.beginPath();
+      ctx.rect(0, 0, w, h);
+      ctx.fill();
+
+      dist /= 2;
+      for (var i = 0; i < this.ts.lanes.length; i++)
+      {
+         for (node = this.ts.lanes[i].first.next; node.data != null; node = node.next)
+         {
+            mobj = node.data;
+            if (mobj.d_pos > pos + dist)
+               continue;
+            if (mobj.d_pos <= pos - dist)
+               break;
+
+            x = (mobj.d_pos - pos + dist) * sx;
+            y = (ts.lanes.length - i) * 8 * sy;
+            l = Math.max(mobj.len * sx, 1.0);
+
+            // draw mobj
+            ctx.fillStyle = ctx.strokeStyle = mobj.color;
+            ctx.beginPath();
+            ctx.rect(x, y, l, this.dsize);
+            ctx.fill();
+
+            // draw crash box
+            if (mobj.crash)
+            {
+               ctx.strokeStyle = "red";
+               ctx.beginPath();
+               ctx.rect(x - 1, y - 1, this.dsize + 2, this.dsize + 2);
+               ctx.stroke();
+            }
+         }
+      }
    }
 
 
@@ -707,10 +761,38 @@ class SimDisplay
    {
       ts.key_action = e.key;
    }
+
+
+   mouse_move_handler(e)
+   {
+      var w = 400;
+      var h = 100;
+      var rect = canvas.getBoundingClientRect();
+      var mousex = e.clientX - rect.left;
+      var mousey = e.clientY - rect.top;
+      if (mousey >= 20 && mousey < 20 + this.ts.lanes.length * this.dsize)
+      {
+         czoom.style.left = (mousex - w / 2) + "px";
+         czoom.style.top = "40px";
+         czoom.width = w;
+         czoom.height = h;
+         this.z_pos = mousex * (this.ts.d_max - 2 * this.ts.d_min) / this.canvas.width + this.ts.d_min;
+         this.draw_zoom = 1;
+      }
+      else
+      {
+         czoom.style.left = '-10px';
+         czoom.width = 0;
+         czoom.height = 0;
+         this.draw_zoom = 0;
+      }
+   }
 }
 
 
 var canvas = document.getElementById('raceplane');
+var czoom = document.getElementById("zoomplane");
+var zctx = czoom.getContext("2d");
 
 console.log("===== NEW RUN =====");
 
@@ -726,5 +808,6 @@ sd.draw();
 
 window.addEventListener('resize', function(e){sd.scaling(); sd.draw();});
 document.addEventListener('keydown', function(e){sd.key_down_handler(e);});
+canvas.addEventListener("mousemove", function(e){sd.mouse_move_handler(e);});
 ts.timer = window.setInterval(function(){sd.draw(); ts.next_frame();}, 1000 / config_.FPS);
 
