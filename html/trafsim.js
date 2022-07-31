@@ -212,6 +212,12 @@ class Lane
       //! neighbor lanes
       this.left = null;
       this.right = null;
+      //! average speed
+      this.v_avg = 0;
+      //! average time
+      this.t_avg = 0;
+      //! number of mobjs in sim range
+      this.n_sim = 0;
 
       this.first.next = this.last;
       this.last.prev = this.first;
@@ -252,6 +258,7 @@ class Lane
       //! max number of iterations to prevent endless loop
       const MAX_LOOP = 10;
       var crash_cnt = 0;
+      var v_avg = 0, n = 0, t_avg = 0;
 
       this.integrity();
       // loop as long as no lane change appeared (because of changes in the linked list)
@@ -260,6 +267,13 @@ class Lane
          // loop over all elements in the list
          for (; node.data != null; node = node.next)
          {
+            // get average speed
+            if (node.data.t_cur < t_cur)
+            {
+               v_avg += node.data.v_avg;
+               n++;
+            }
+
             // restart outer loop in case of a lane change
             var act = node.data.recalc(t_cur);
             if (act == MOBJ_ACT.LEFT || act == MOBJ_ACT.RIGHT)
@@ -274,6 +288,11 @@ class Lane
 
       if (i >= MAX_LOOP)
          console.log("probably endless loop in recalc()");
+
+      this.v_avg = v_avg / n;
+      if (this.v_avg > 0)
+         this.t_avg = config_.DISTANCE / this.v_avg;
+      this.n_sim = n;
 
       return crash_cnt;
    }
@@ -332,7 +351,7 @@ class TrafSim
       this.t_avg = 0;
       this.crash_cnt = 0;
       //! average speed
-      this.avg_speed = 0;
+      this.v_avg = 0;
       //! sum of numbers to average
       this.avg_cnt = 0;
 
@@ -400,7 +419,6 @@ class TrafSim
       node.data.node = node;
       node.data.lane = lane;
       node.data.d_pos = this.d_min - config_.MIN_ENTRY_POS;
-//      node.data.t_init = this.cur_frame;
       if (lane.last.prev.data == null)
          node.data.v_cur = node.data.v_max;
       else
@@ -418,13 +436,6 @@ class TrafSim
    delete_mobj_node(node)
    {
       node.unlink();
-
-      // calculate average speed
-      this.avg_speed = (this.avg_speed * this.avg_cnt + MovingObject.ms2kmh(node.data.v_avg)) / (this.avg_cnt + 1);
-      // calculate average time on road
-      this.t_avg = (this.t_avg * this.avg_cnt + node.data.t_end - node.data.t_start) / (this.avg_cnt + 1);
-      this.avg_cnt++;
-
       console.log(node.data.sim_data());
 
       node.data.destructor();
@@ -456,7 +467,8 @@ class TrafSim
          case 'd':
             for (var j = 0; j < this.lanes.length; j++)
                for (var node = this.lanes[j].first.next; node.data != null; node = node.next)
-                  console.log(node.data.cur_data());
+                  if (node.data.t_start && node.data.t_end)
+                     console.log(node.data.sim_data());
             break;
 
          case 's':
@@ -510,6 +522,14 @@ class TrafSim
       }
       this.mobj_density = this.mobj_cnt / config_.DISTANCE * 1000;
 
+      var n = 0, v_avg = 0;
+      for (var i = 0; i < this.lanes.length; i++)
+      {
+         v_avg += this.lanes[i].v_avg * this.lanes[i].n_sim;
+         n += this.lanes[i].n_sim;
+      }
+      this.v_avg = v_avg / n;
+
       // stop simulation if there is a specific amount of simulation frames
       if (config_.MAX_FRAMES && this.cur_frame >= config_.MAX_FRAMES)
          window.clearInterval(this.timer);
@@ -547,9 +567,9 @@ class TrafSim
    draw()
    {
       document.getElementById("t_cur").textContent = FormatTime.hms(this.cur_frame) + " (" + (config_.FPS * this.sim_fpd) + "x)";
-      document.getElementById("avg_speed").textContent = this.avg_speed.toFixed(1);
+      document.getElementById("v_avg").textContent = MovingObject.ms2kmh(this.v_avg).toFixed(1);
       document.getElementById("t_avg").textContent = FormatTime.hms(this.t_avg);
-      document.getElementById("tput").textContent = (this.avg_speed * this.mobj_density).toFixed(1);
+      document.getElementById("tput").textContent = (this.v_avg * this.mobj_density).toFixed(1);
       document.getElementById("mobj_cnt").textContent = this.mobj_cnt;
       document.getElementById("mobj_density").textContent = this.mobj_density.toFixed(1);
       document.getElementById("crash_cnt").textContent = this.crash_cnt;
@@ -565,6 +585,9 @@ class TrafSim
          this.ctx.save();
          this.ctx.translate(0, this.coff + this.chgt * this.cmul * (j + 1));
          this.draw_axis();
+         var y = 40 -this.cmul * this.chgt;
+         this.ctx.clearRect(40, y, 350, -10);
+         this.ctx.fillText("n_sim=" + this.lanes[this.lanes.length - j - 1].n_sim + " v_avg=" + MovingObject.ms2kmh(this.lanes[this.lanes.length - j - 1].v_avg).toFixed(1) + " km/h t_avg=" + FormatTime.hms(this.lanes[this.lanes.length - j - 1].t_avg), 40, y);
          this.ctx.restore();
       }
 

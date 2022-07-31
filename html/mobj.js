@@ -545,18 +545,13 @@ class MovingObject
    }
 
 
+   /*! Return simulation data as a string.
+    */
    sim_data()
    {
       var t = this.t_end - this.t_start;
 
-      return "name=\"" + this.name + "\" v_max=" + MovingObject.ms2kmh(this.v_max).toFixed(1) + " t=" + FormatTime.hms(t) + " t_slow=" + FormatTime.hms(this.t_slow) + " t_slowp=" + (100 * this.t_slow / (t)).toFixed(1) + "% v_avg=" + MovingObject.ms2kmh(this.v_avg).toFixed(1);
-   }
-
-
-   /*! Return current data as a string. */
-   cur_data()
-   {
-      return 'lane=' + this.lane.id + ' name="' + this.name + '" v_cur=' + MovingObject.ms2kmh(this.v_cur).toFixed(1) + ' d_pos=' + this.d_pos.toFixed(1) + ' crash=' + this.crash;
+      return "lane=" + this.lane.id + " name=\"" + this.name +"\" v_max=" + MovingObject.ms2kmh(this.v_max).toFixed(1) + " v_cur=" + MovingObject.ms2kmh(this.v_cur).toFixed(1) + " t=" + FormatTime.hms(t) + " t_start=" + this.t_start + " t_end=" + this.t_end + " t_slow=" + FormatTime.hms(this.t_slow) + " p_tslow=" + (100 * this.t_slow / (t)).toFixed(1) + "% v_avg=" + MovingObject.ms2kmh(this.v_avg).toFixed(1);
    }
 }
 
