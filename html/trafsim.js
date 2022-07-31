@@ -288,7 +288,7 @@ class Lane
          for (; node.data != null; node = node.next)
          {
             // get average speed
-            if (node.data.t_cur < t_cur)
+            if (node.data.t_cur < t_cur && node.data.t_end > 0)
             {
                v_avg += node.data.v_avg;
                n++;
