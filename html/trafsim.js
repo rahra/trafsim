@@ -214,8 +214,6 @@ class Lane
       this.right = null;
       //! average speed
       this.v_avg = 0;
-      //! average time
-      this.t_avg = 0;
       //! number of mobjs in sim range
       this.n_sim = 0;
 
@@ -253,12 +251,34 @@ class Lane
    }
 
 
+   /*! Return average time.
+    */
+   get t_avg()
+   {
+      return this.v_avg > 0 ? config_.DISTANCE / this.v_avg : 0;
+   }
+
+
+   /*! Return mobj frequency (per hour).
+    */
+   get f_sim()
+   {
+      return this.t_avg > 0 ? 3600 * this.n_sim / this.t_avg : 0;
+   }
+
+   /*! Get mobj density (mobjs per km).
+    */
+   get r_sim()
+   {
+      return 1000 * this.n_sim / config_.DISTANCE;
+   }
+
    recalc(t_cur)
    {
       //! max number of iterations to prevent endless loop
       const MAX_LOOP = 10;
       var crash_cnt = 0;
-      var v_avg = 0, n = 0, t_avg = 0;
+      var v_avg = 0, n = 0;
 
       this.integrity();
       // loop as long as no lane change appeared (because of changes in the linked list)
@@ -290,8 +310,6 @@ class Lane
          console.log("probably endless loop in recalc()");
 
       this.v_avg = v_avg / n;
-      if (this.v_avg > 0)
-         this.t_avg = config_.DISTANCE / this.v_avg;
       this.n_sim = n;
 
       return crash_cnt;
@@ -451,6 +469,7 @@ class TrafSim
       // evaluate keys
       switch (this.key_action)
       {
+         case 'k':
          case ' ':
             this.running = !this.running;
             break;
@@ -586,8 +605,9 @@ class TrafSim
          this.ctx.translate(0, this.coff + this.chgt * this.cmul * (j + 1));
          this.draw_axis();
          var y = 40 -this.cmul * this.chgt;
-         this.ctx.clearRect(40, y, 350, -10);
-         this.ctx.fillText("n_sim=" + this.lanes[this.lanes.length - j - 1].n_sim + " v_avg=" + MovingObject.ms2kmh(this.lanes[this.lanes.length - j - 1].v_avg).toFixed(1) + " km/h t_avg=" + FormatTime.hms(this.lanes[this.lanes.length - j - 1].t_avg), 40, y);
+         this.ctx.clearRect(40, y, 550, -10);
+         var lane = this.lanes[this.lanes.length - j - 1];
+         this.ctx.fillText("n_sim=" + lane.n_sim + " v_avg=" + MovingObject.ms2kmh(lane.v_avg).toFixed(1) + " km/h t_avg=" + FormatTime.hms(lane.t_avg) + " f_sim=" + lane.f_sim.toFixed(1) + " /h r_sim=" + lane.r_sim.toFixed(1) + " /km", 40, y);
          this.ctx.restore();
       }
 
